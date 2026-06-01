@@ -1,0 +1,223 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== CUSTOM VARIABLES & BASE ===== */
+:root {
+  --black: #000000;
+  --black-card: #0A0A0A;
+  --gold: #D4A847;
+  --gold-light: #F0D78C;
+  --gold-dark: #B8922F;
+  --gold-glow: rgba(212, 168, 71, 0.25);
+  --cream: #FFF8E7;
+  --font-heading: 'Cormorant Garamond', serif;
+  --font-script: 'Great Vibes', cursive;
+  --font-body: 'Poppins', sans-serif;
+  --nav-height: 64px;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #030303;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: #030303;
+  color: var(--cream);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for Mobile Frame and Body */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #030303;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* ===== MIX BLEND MODE TO REMOVE BLACK BACKGROUNDS ===== */
+.blend-screen {
+  mix-blend-mode: screen;
+  filter: contrast(1.1) brightness(1.05);
+}
+
+/* ===== APP FRAME & VIEWS ===== */
+.mobile-device-frame {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(212, 168, 71, 0.1);
+  border: 4px solid #1C1917; /* Slate/stone border look */
+  background: var(--black);
+}
+
+/* Custom fade-in and slide animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatParticle {
+  0% { opacity: 0; transform: translateY(100%) scale(0); }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { opacity: 0; transform: translateY(-20px) scale(1); }
+}
+
+/* Very smooth floating animations for side decorative assets */
+@keyframes floatLeft {
+  0%, 100% { transform: translateY(-50%) translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-50%) translateY(-25px) rotate(1deg); }
+}
+
+@keyframes floatRight {
+  0%, 100% { transform: translateY(-50%) translateY(0px) rotate(1deg); }
+  50% { transform: translateY(-50%) translateY(-25px) rotate(-1deg); }
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.04; transform: scale(1); }
+  50% { opacity: 0.07; transform: scale(1.05); }
+}
+
+.animate-float-left {
+  animation: floatLeft 8s ease-in-out infinite;
+}
+
+.animate-float-right {
+  animation: floatRight 8s ease-in-out infinite;
+}
+
+.animate-watermark {
+  animation: pulseSlow 12s ease-in-out infinite;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(25px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Modifiers to override the base transform direction */
+.reveal-down {
+  transform: translateY(-25px);
+}
+.reveal-down.visible {
+  transform: translateY(0);
+}
+
+.reveal-left {
+  transform: translateX(-35px);
+}
+.reveal-left.visible {
+  transform: translateX(0);
+}
+
+.reveal-right {
+  transform: translateX(35px);
+}
+.reveal-right.visible {
+  transform: translateX(0);
+}
+
+.reveal-scale {
+  transform: scale(0.92) translateY(10px);
+}
+.reveal-scale.visible {
+  transform: scale(1) translateY(0);
+}
+
+/* Transition Delays for Staggered Reveal */
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-400 { transition-delay: 400ms; }
+.delay-500 { transition-delay: 500ms; }
+.delay-600 { transition-delay: 600ms; }
+.delay-700 { transition-delay: 700ms; }
+.delay-800 { transition-delay: 800ms; }
+.delay-900 { transition-delay: 900ms; }
+.delay-1000 { transition-delay: 1000ms; }
+.delay-1100 { transition-delay: 1100ms; }
+.delay-1200 { transition-delay: 1200ms; }
+
+/* Custom divider lines */
+.gold-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.gold-divider .line {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.gold-divider .diamond {
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  transform: rotate(45deg);
+}
+
+/* Bottom Navigation active styles */
+.nav-item-active {
+  color: var(--gold) !important;
+  opacity: 1 !important;
+}
+.nav-item-active .nav-icon {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 8px rgba(212, 168, 71, 0.5));
+}
+.nav-item-active::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 24px;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 2px;
+}
+
+/* Music Equalizer Animation */
+@keyframes bar1 { from { height: 30%; } to { height: 85%; } }
+@keyframes bar2 { from { height: 50%; } to { height: 100%; } }
+@keyframes bar3 { from { height: 40%; } to { height: 75%; } }
+@keyframes bar4 { from { height: 60%; } to { height: 95%; } }
+
+.music-bar-1 { animation: bar1 0.6s infinite alternate; }
+.music-bar-2 { animation: bar2 0.5s infinite alternate; }
+.music-bar-3 { animation: bar3 0.7s infinite alternate; }
+.music-bar-4 { animation: bar4 0.4s infinite alternate; }
+
+/* Loading Bar Animation */
+@keyframes loadingBar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+.animate-loading-bar {
+  animation: loadingBar 2s infinite ease-in-out;
+}
