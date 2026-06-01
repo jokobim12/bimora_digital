@@ -233,7 +233,7 @@ export default function AdminDashboard() {
     }
 
     const payload: WeddingData = {
-      id: editingItem ? editingItem.id : crypto.randomUUID(),
+      id: editingItem ? editingItem.id : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9) + Date.now().toString(36)),
       slug: cleanSlug,
       template_type: templateType,
       is_active: isActive,
@@ -444,7 +444,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Modal Scroll Body */}
-            <form onSubmit={handleFormSubmit} className="overflow-y-auto p-6 flex-grow flex flex-col gap-6 no-scrollbar">
+            <form id="invitation-form" onSubmit={handleFormSubmit} className="overflow-y-auto p-6 flex-grow flex flex-col gap-6 no-scrollbar">
               
               {/* SECTION: SYSTEM / LINK CONFIG */}
               <div>
@@ -873,8 +873,8 @@ export default function AdminDashboard() {
               </button>
               
               <button 
-                type="button"
-                onClick={handleFormSubmit}
+                type="submit"
+                form="invitation-form"
                 className="px-8 py-3 bg-jawa-gold hover:bg-jawa-gold-dark text-black font-body text-xs font-bold tracking-wider uppercase rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
               >
                 <IoSaveOutline className="text-sm" /> Simpan Undangan
