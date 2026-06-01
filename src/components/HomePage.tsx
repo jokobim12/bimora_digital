@@ -81,7 +81,7 @@ export default function HomePage({ isDesktopMode = false, data = defaultWeddingD
 
           {/* Elegant Wayang Couple Silhouette (Placed here in mobile, or in right col in desktop) */}
           {!isDesktopMode && (
-            <div className="my-8 flex justify-center reveal reveal-scale delay-1000 w-full">
+            <div className="my-8 flex justify-center w-full animate-[fadeUp_1.2s_0.8s_both]">
               <img 
                 className="w-[180px] h-auto blend-screen drop-shadow-[0_0_25px_rgba(212,168,71,0.25)] animate-pulse" 
                 src="/assets/wayang-couple.png" 
@@ -108,7 +108,7 @@ export default function HomePage({ isDesktopMode = false, data = defaultWeddingD
           
           {/* Elegant Wayang Couple Silhouette (Desktop Only in this column) */}
           {isDesktopMode && (
-            <div className="mb-6 flex justify-center reveal reveal-scale delay-500 w-full">
+            <div className="mb-6 flex justify-center w-full animate-[fadeUp_1.2s_0.5s_both]">
               <img 
                 className="w-[200px] lg:w-[230px] h-auto blend-screen drop-shadow-[0_0_30px_rgba(212,168,71,0.25)] animate-pulse" 
                 src="/assets/wayang-couple.png" 
