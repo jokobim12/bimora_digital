@@ -18,9 +18,13 @@ export default {
         }
       },
       fontFamily: {
-        heading: ['Poppins', 'sans-serif'],
-        script: ['Poppins', 'sans-serif'],
+        heading: ['Cormorant Garamond', 'serif'],
+        script: ['Great Vibes', 'cursive'],
         body: ['Poppins', 'sans-serif'],
+      },
+      boxShadow: {
+        'gold-glow': '0 0 20px rgba(212, 168, 71, 0.3)',
+        'gold-glow-lg': '0 0 35px rgba(212, 168, 71, 0.4)',
       }
     },
   },

@@ -76,6 +76,39 @@ export const defaultWeddingData: WeddingData = {
   ]
 }
 
+export const cerahWeddingData: WeddingData = {
+  id: 'cerah-demo',
+  slug: 'prabowo-ayu',
+  template_type: 'jawa_cerah',
+  is_active: true,
+  groom_name: 'Raden Mas Prabowo Utomo, S.T.',
+  groom_nickname: 'Prabowo',
+  groom_parents: 'Putra Kedua dari Bapak Haryo & Ibu Ratih\nSurakarta, Jawa Tengah',
+  groom_photo: '/assets/mempelai/groom.png',
+  bride_name: 'Diah Ayu Sekar Arum, S.Hum.',
+  bride_nickname: 'Ayu',
+  bride_parents: 'Putri Pertama dari Bapak Joko & Ibu Widowati\nSurakarta, Jawa Tengah',
+  bride_photo: '/assets/mempelai/bride.png',
+  couple_photo: '/assets/mempelai/mempelai.png',
+  wedding_date: '2026-09-20',
+  akad_time: '09:00 - 11:00 WIB',
+  resepsi_time: '12:00 - 15:00 WIB',
+  location_name: 'Sasana Wira Bakti',
+  location_address: 'Jl. Slamet Riyadi No.120, Kec. Laweyan, Kota Surakarta, Jawa Tengah 57142',
+  maps_embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.195029419177!2d110.80624027476343!3d-7.553683692460142!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a16efe15db5e1%3A0x6bcfd35bcfa2ebf9!2sGedung%20Graha%20Saba%20Buana!5e0!3m2!1sid!2sid!4v1700000000000',
+  maps_link: 'https://maps.app.goo.gl/9Zc1zG29XvH2T1x27',
+  music_url: '/music/jawa.mp3',
+  gifts: [
+    { bank: 'BCA', number: '9876543210', name: 'Raden Mas Prabowo' },
+    { bank: 'Mandiri', number: '1234567890', name: 'Diah Ayu Sekar Arum' }
+  ],
+  stories: [
+    { year: '2023', title: 'Awal Perkenalan', desc: 'Kami diperkenalkan oleh kerabat dekat keluarga di Keraton Surakarta. Sejak saat itu kami mulai berkomunikasi intens.' },
+    { year: '2025', title: 'Lamaran Resmi', desc: 'Pertemuan keluarga besar untuk melamar secara resmi dilaksanakan dengan adat Jawa penuh kekeluargaan.' },
+    { year: '2026', title: 'Pernikahan Suci', desc: 'Penyatuan cinta kasih kami dalam ikatan suci pernikahan di hadapan keluarga besar tercinta.' }
+  ]
+}
+
 // LocalStorage Helper functions for the Prototype Database
 const STORAGE_KEY = 'bimora_invitations'
 const PRODUCTS_KEY = 'bimora_products'
@@ -85,14 +118,14 @@ export function getLocalInvitations(): WeddingData[] {
   const data = localStorage.getItem(STORAGE_KEY)
   if (!data) {
     // Initialize with default template data
-    const initial = [defaultWeddingData]
+    const initial = [defaultWeddingData, cerahWeddingData]
     localStorage.setItem(STORAGE_KEY, JSON.stringify(initial))
     return initial
   }
   try {
     return JSON.parse(data)
   } catch (e) {
-    return [defaultWeddingData]
+    return [defaultWeddingData, cerahWeddingData]
   }
 }
 
@@ -155,6 +188,21 @@ export const defaultProducts: ProductData[] = [
     previewSlug: 'bimantara-clara',
     available: true,
     color: 'from-stone-900 to-stone-800',
+  },
+  {
+    id: 5,
+    name: 'Adat Jawa Premium – Cerah Jawa',
+    category: 'Adat Jawa',
+    price: 149000,
+    originalPrice: 199000,
+    rating: 5,
+    reviews: 32,
+    badge: 'Baru',
+    desc: 'Keindahan tradisi Jawa dalam balutan warna cerah yang hangat, luhur, bersih, anggun, dengan ornamen gunungan, dan iringan gending Jawa.',
+    features: ['Countdown Hari H', 'Love Story Timeline', 'Galeri 15 Foto', 'Kustom Musik MP3', 'Maps Interaktif', 'Form RSVP'],
+    previewSlug: 'prabowo-ayu',
+    available: true,
+    color: 'from-orange-100 to-amber-50 text-amber-800',
   },
   {
     id: 2,

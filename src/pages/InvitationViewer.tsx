@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { IoChevronBackOutline, IoWarningOutline } from 'react-icons/io5'
 import type { WeddingData } from '../utils/dummyData'
 import { getLocalInvitationBySlug } from '../utils/dummyData'
-import InvitationTemplate from '../components/template/jawa/gelap_premium/InvitationTemplate'
+import InvitationTemplateGelap from '../components/template/jawa/gelap_premium/InvitationTemplate'
+import InvitationTemplateCerah from '../components/template/jawa/cerah_premium/InvitationTemplate'
 
 export default function InvitationViewer() {
   const { slug } = useParams<{ slug: string }>()
@@ -35,7 +36,7 @@ export default function InvitationViewer() {
           <IoWarningOutline className="text-5xl text-emerald-600 mb-4" />
           <h1 className="font-heading text-xl text-emerald-600 tracking-wide font-bold uppercase">Undangan Tidak Ditemukan</h1>
           
-          <p className="font-body text-xs text-stone-500 leading-relaxed mt-4 mb-6">
+          <p className="font-body text-[10px] text-stone-500 leading-relaxed mt-4 mb-6">
             Mohon maaf, tautan undangan digital yang Anda akses tidak terdaftar dalam database sistem Bimora Digital. Silakan periksa kembali alamat tautan Anda.
           </p>
 
@@ -60,7 +61,7 @@ export default function InvitationViewer() {
           </div>
           <h1 className="font-heading text-xl text-emerald-600 tracking-wide font-bold uppercase">Masa Aktif Habis</h1>
           
-          <p className="font-body text-xs text-stone-500 leading-relaxed mt-4 mb-6">
+          <p className="font-body text-[10px] text-stone-500 leading-relaxed mt-4 mb-6">
             Undangan digital milik <span className="text-emerald-600 font-semibold">{weddingData.groom_nickname} &amp; {weddingData.bride_nickname}</span> saat ini telah dinonaktifkan atau masa kontrak layanan aktif telah berakhir.
           </p>
 
@@ -75,6 +76,11 @@ export default function InvitationViewer() {
     )
   }
 
-  // Active Invitation - Render Template Container!
-  return <InvitationTemplate data={weddingData} />
+  // Active Invitation - Render Template Container based on template_type!
+  if (weddingData.template_type === 'jawa_cerah') {
+    return <InvitationTemplateCerah data={weddingData} />
+  }
+
+  // Default to Gelap Premium (jawa)
+  return <InvitationTemplateGelap data={weddingData} />
 }

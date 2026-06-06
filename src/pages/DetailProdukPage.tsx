@@ -26,7 +26,11 @@ export default function DetailProdukPage() {
       setProduct(found)
       const related = allProducts
         .filter(p => String(p.id) !== String(id))
-        .sort((a, b) => (a.category === found.category ? -1 : 1))
+        .sort((a, b) => {
+          const matchA = a.category === found.category ? 1 : 0
+          const matchB = b.category === found.category ? 1 : 0
+          return matchB - matchA
+        })
         .slice(0, 3)
       setRelatedProducts(related)
     } else {

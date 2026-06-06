@@ -168,12 +168,12 @@ body {
 .gold-divider .line {
   width: 60px;
   height: 1px;
-  background: var(--blue);
+  background: #D4A847;
 }
 .gold-divider .diamond {
   width: 8px;
   height: 8px;
-  background: var(--blue);
+  background: #D4A847;
   transform: rotate(45deg);
 }
 

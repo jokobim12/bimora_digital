@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import {
   IoLockClosedOutline, IoAddOutline, IoTrashOutline,
   IoCreateOutline, IoEyeOutline, IoCloseOutline,
-  IoChevronBackOutline, IoSaveOutline, IoTrashBinOutline,
+  IoChevronBackOutline, IoSaveOutline,
   IoHomeOutline, IoCartOutline, IoReceiptOutline, IoMailOpenOutline,
-  IoLogOutOutline, IoPeopleOutline, IoWalletOutline, IoCalendarOutline,
+  IoLogOutOutline, IoWalletOutline,
   IoSearchOutline, IoMenuOutline, IoCheckmarkCircleOutline
 } from 'react-icons/io5'
 import type { WeddingData, ProductData, OrderData } from '../utils/dummyData'
@@ -1199,7 +1199,8 @@ export default function AdminDashboard() {
                       onChange={e => setTemplateType(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                     >
-                      <option value="jawa">Adat Jawa Premium</option>
+                      <option value="jawa">Adat Jawa Premium - Gelap Megah</option>
+                      <option value="jawa_cerah">Adat Jawa Premium - Cerah Jawa</option>
                       <option value="modern" disabled>Modern Emerald (Coming Soon)</option>
                     </select>
                   </div>
