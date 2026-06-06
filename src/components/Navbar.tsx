@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { IoMenuOutline, IoCloseOutline, IoLockClosedOutline } from 'react-icons/io5'
+import { IoMenuOutline, IoCloseOutline, IoLogoWhatsapp } from 'react-icons/io5'
 
 const navLinks = [
   { to: '/', label: 'Beranda' },
   { to: '/produk', label: 'Produk' },
-  { to: '/portofolio', label: 'Portofolio' },
-  { to: '/tentang', label: 'Tentang Kami' },
 ]
 
 export default function Navbar() {
@@ -15,7 +13,7 @@ export default function Navbar() {
   const location = useLocation()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
+    const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -29,102 +27,98 @@ export default function Navbar() {
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-[0_2px_20px_rgba(180,140,40,0.12)] border-b border-gold-200/60'
-            : 'bg-white/80 backdrop-blur-sm border-b border-gold-100/40'
+            ? 'bg-white/90 backdrop-blur-md border-b border-stone-200/50 shadow-[0_2px_15px_rgba(0,0,0,0.02)] py-2 sm:py-3'
+            : 'bg-white/60 backdrop-blur-sm border-b border-stone-100 py-3 sm:py-4.5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <span className="text-white font-bold text-sm font-heading">B</span>
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-500 flex items-center justify-center shadow-md shadow-emerald-600/10 group-hover:scale-105 transition-transform duration-300">
+              <span className="text-white font-bold text-sm font-heading tracking-wider">B</span>
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-heading text-xl font-bold tracking-widest text-amber-700">BIMORA</span>
-              <span className="text-[8px] tracking-[3px] text-amber-500/80 uppercase -mt-0.5">Digital</span>
+            <div className="flex flex-col leading-none">
+              <span className="font-heading text-lg font-black tracking-widest text-stone-850">
+                BIMORA
+              </span>
+              <span className="text-[7px] tracking-[4px] text-emerald-600 font-bold uppercase mt-1">
+                Digital
+              </span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map(link => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  location.pathname === link.to
-                    ? 'bg-amber-600 text-white shadow-md shadow-amber-200'
-                    : 'text-stone-600 hover:text-amber-700 hover:bg-amber-50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map(link => {
+              const isActive = location.pathname === link.to
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`relative py-1.5 text-xs sm:text-sm font-semibold tracking-wide transition-colors duration-200 ${
+                    isActive ? 'text-emerald-700' : 'text-stone-600 hover:text-emerald-600'
+                  }`}
+                >
+                  {link.label}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-emerald-600 rounded-full" />
+                  )}
+                </Link>
+              )
+            })}
           </nav>
 
-          {/* CTA + Admin */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/admin"
-              className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-700 transition-colors px-3 py-1.5 rounded-full hover:bg-amber-50 border border-transparent hover:border-amber-200"
-            >
-              <IoLockClosedOutline />
-              <span>Admin</span>
-            </Link>
+          {/* CTA Button */}
+          <div className="hidden md:flex items-center">
             <a
               href="https://wa.me/6281234567890?text=Halo%20Bimora%20Digital,%20saya%20ingin%20pesan%20undangan%20digital"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold text-xs rounded-full shadow-md shadow-amber-200 transition-all hover:scale-105 active:scale-95"
+              className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold text-xs rounded-full transition-all duration-300 shadow-sm hover:shadow shadow-emerald-600/10 active:scale-98 cursor-pointer"
             >
-              Pesan Sekarang
+              Hubungi Kami
             </a>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger - modern circular button */}
           <button
-            className="md:hidden p-2 rounded-xl text-stone-600 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+            className="md:hidden w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center text-stone-600 hover:text-emerald-600 hover:border-emerald-600/30 transition-all duration-300 focus:outline-none"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle Menu"
           >
-            {isOpen ? <IoCloseOutline className="text-2xl" /> : <IoMenuOutline className="text-2xl" />}
+            {isOpen ? <IoCloseOutline className="text-xl" /> : <IoMenuOutline className="text-xl" />}
           </button>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu - Dropdown Panel with transition */}
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            isOpen ? 'max-h-72 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
           }`}
         >
-          <div className="bg-white border-t border-amber-100 px-4 pb-4 pt-2 flex flex-col gap-1">
-            {navLinks.map(link => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  location.pathname === link.to
-                    ? 'bg-amber-600 text-white'
-                    : 'text-stone-600 hover:text-amber-700 hover:bg-amber-50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="border-t border-amber-100 mt-2 pt-3 flex flex-col gap-2">
-              <Link
-                to="/admin"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-stone-500 hover:bg-amber-50 hover:text-amber-700 transition-colors"
-              >
-                <IoLockClosedOutline />
-                Portal Admin
-              </Link>
+          <div className="bg-white border-t border-stone-100 px-6 py-5 flex flex-col gap-3.5 shadow-inner">
+            {navLinks.map(link => {
+              const isActive = location.pathname === link.to
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`py-2 text-sm font-semibold transition-all duration-200 ${
+                    isActive ? 'text-emerald-600 border-l-2 border-emerald-600 pl-3' : 'text-stone-600 pl-3 hover:text-emerald-600'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
+            <div className="border-t border-stone-100 pt-4 mt-2">
               <a
                 href="https://wa.me/6281234567890?text=Halo%20Bimora%20Digital,%20saya%20ingin%20pesan%20undangan%20digital"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold text-sm rounded-xl text-center shadow-md shadow-amber-100 transition-all active:scale-95"
+                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-xs rounded-xl text-center flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
-                Pesan Sekarang via WhatsApp
+                <IoLogoWhatsapp className="text-base" /> Pesan via WhatsApp
               </a>
             </div>
           </div>
@@ -132,7 +126,7 @@ export default function Navbar() {
       </header>
 
       {/* Spacer for fixed header */}
-      <div className="h-[65px] sm:h-[73px]" />
+      <div className="h-[60px] sm:h-[70px]" />
     </>
   )
 }

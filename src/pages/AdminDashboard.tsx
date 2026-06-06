@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  IoLockClosedOutline, IoAddOutline, IoTrashOutline, 
-  IoCreateOutline, IoEyeOutline, IoCloseOutline, 
-  IoChevronBackOutline, IoSaveOutline, IoTrashBinOutline 
+import {
+  IoLockClosedOutline, IoAddOutline, IoTrashOutline,
+  IoCreateOutline, IoEyeOutline, IoCloseOutline,
+  IoChevronBackOutline, IoSaveOutline, IoTrashBinOutline,
+  IoHomeOutline, IoCartOutline, IoReceiptOutline, IoMailOpenOutline,
+  IoLogOutOutline, IoPeopleOutline, IoWalletOutline, IoCalendarOutline,
+  IoSearchOutline, IoMenuOutline, IoCheckmarkCircleOutline
 } from 'react-icons/io5'
-import type { WeddingData } from '../utils/dummyData'
-import { 
-  getLocalInvitations, 
-  addOrUpdateLocalInvitation, deleteLocalInvitation 
+import type { WeddingData, ProductData, OrderData } from '../utils/dummyData'
+import {
+  getLocalInvitations, addOrUpdateLocalInvitation, deleteLocalInvitation,
+  getLocalProducts, addOrUpdateLocalProduct, deleteLocalProduct,
+  getLocalOrders, addOrUpdateLocalOrder, deleteLocalOrder
 } from '../utils/dummyData'
 
 export default function AdminDashboard() {
@@ -16,24 +20,42 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState(false)
   
+  // Navigation
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'produk' | 'pesanan' | 'template'>('dashboard')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Data States
   const [invitations, setInvitations] = useState<WeddingData[]>([])
-  const [showModal, setShowModal] = useState(false)
-  const [editingItem, setEditingItem] = useState<WeddingData | null>(null)
-  
-  // Toast State
+  const [products, setProducts] = useState<ProductData[]>([])
+  const [orders, setOrders] = useState<OrderData[]>([])
+
+  // Modal Controls
+  const [showInvitationModal, setShowInvitationModal] = useState(false)
+  const [showProductModal, setShowProductModal] = useState(false)
+  const [showOrderModal, setShowOrderModal] = useState(false)
+
+  // Editing items
+  const [editingInvitation, setEditingInvitation] = useState<WeddingData | null>(null)
+  const [editingProduct, setEditingProduct] = useState<ProductData | null>(null)
+  const [editingOrder, setEditingOrder] = useState<OrderData | null>(null)
+
+  // Search filters
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Toast notifications
   const [toastMsg, setToastMsg] = useState('')
   const [showToast, setShowToast] = useState(false)
 
-  // Form Fields State
+  // ----------------------------------------------------
+  // INVITATION FORM STATES
+  // ----------------------------------------------------
   const [slug, setSlug] = useState('')
   const [templateType, setTemplateType] = useState('jawa')
-  const [isActive, setIsActive] = useState(true)
-  
+  const [isInvitationActive, setIsInvitationActive] = useState(true)
   const [groomName, setGroomName] = useState('')
   const [groomNickname, setGroomNickname] = useState('')
   const [groomParents, setGroomParents] = useState('')
   const [groomPhoto, setGroomPhoto] = useState('/assets/mempelai/groom.png')
-  
   const [brideName, setBrideName] = useState('')
   const [brideNickname, setBrideNickname] = useState('')
   const [brideParents, setBrideParents] = useState('')
@@ -41,56 +63,6 @@ export default function AdminDashboard() {
   const [couplePhoto, setCouplePhoto] = useState('/assets/mempelai/mempelai.png')
   const [gallery, setGallery] = useState<string[]>([])
   const [stories, setStories] = useState<{ year: string; title: string; desc: string }[]>([])
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setter(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 4.5 * 1024 * 1024) {
-        alert('File musik terlalu besar (Maksimal 4.5MB untuk prototype local storage)!')
-        return
-      }
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setMusicUrl(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    const remainingCount = 6 - gallery.length
-    if (remainingCount <= 0) {
-      triggerToast('Maksimal 6 foto galeri!')
-      return
-    }
-    
-    const filesToUpload = files.slice(0, remainingCount)
-    
-    filesToUpload.forEach(file => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setGallery(prev => [...prev, reader.result as string].slice(0, 6))
-      }
-      reader.readAsDataURL(file)
-    })
-  }
-
-  const handleRemoveGalleryImage = (index: number) => {
-    setGallery(prev => prev.filter((_, i) => i !== index))
-  }
-  
   const [weddingDate, setWeddingDate] = useState('2026-08-15')
   const [akadTime, setAkadTime] = useState('08:00 - 10:00 WIB')
   const [resepsiTime, setResepsiTime] = useState('11:00 - 14:00 WIB')
@@ -98,19 +70,59 @@ export default function AdminDashboard() {
   const [locationAddress, setLocationAddress] = useState('')
   const [mapsEmbed, setMapsEmbed] = useState('')
   const [mapsLink, setMapsLink] = useState('')
-  
   const [musicUrl, setMusicUrl] = useState('/music/jawa.mp3')
   const [gifts, setGifts] = useState<{ bank: string; number: string; name: string }[]>([])
 
-  // Load Invitations on Enter
+  // ----------------------------------------------------
+  // PRODUCT FORM STATES
+  // ----------------------------------------------------
+  const [pId, setPId] = useState<string | number>('')
+  const [pName, setPName] = useState('')
+  const [pCategory, setPCategory] = useState('Adat Jawa')
+  const [pPrice, setPPrice] = useState(129000)
+  const [pOriginalPrice, setPOriginalPrice] = useState(169000)
+  const [pRating, setPRating] = useState(5)
+  const [pReviews, setPReviews] = useState(10)
+  const [pBadge, setPBadge] = useState('')
+  const [pDesc, setPDesc] = useState('')
+  const [pFeatures, setPFeatures] = useState('')
+  const [pPreviewSlug, setPPreviewSlug] = useState('')
+  const [pAvailable, setPAvailable] = useState(true)
+  const [pThumbnail, setPThumbnail] = useState<string>('')
+  const [rawProductImage, setRawProductImage] = useState<string | null>(null)
+  const [imageBaseDims, setImageBaseDims] = useState<{ w: number; h: number } | null>(null)
+  const [cropScale, setCropScale] = useState(1)
+  const [cropX, setCropX] = useState(0)
+  const [cropY, setCropY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const cropperContainerRef = useRef<HTMLDivElement | null>(null)
+
+  // ----------------------------------------------------
+  // ORDER FORM STATES
+  // ----------------------------------------------------
+  const [oId, setOId] = useState('')
+  const [oCustomerName, setOCustomerName] = useState('')
+  const [oCustomerPhone, setOCustomerPhone] = useState('')
+  const [oProductName, setOProductName] = useState('')
+  const [oOrderDate, setOOrderDate] = useState('')
+  const [oStatus, setOStatus] = useState<'Menunggu Pembayaran' | 'Diproses' | 'Selesai' | 'Dibatalkan'>('Menunggu Pembayaran')
+  const [oTotalPrice, setOTotalPrice] = useState(129000)
+
+  // Check auth on load
   useEffect(() => {
-    // Check session auth
     const session = sessionStorage.getItem('bimora_admin_auth')
     if (session === 'true') {
       setIsLoggedIn(true)
-      setInvitations(getLocalInvitations())
+      loadAllData()
     }
   }, [])
+
+  const loadAllData = () => {
+    setInvitations(getLocalInvitations())
+    setProducts(getLocalProducts())
+    setOrders(getLocalOrders())
+  }
 
   const triggerToast = (msg: string) => {
     setToastMsg(msg)
@@ -124,7 +136,7 @@ export default function AdminDashboard() {
       setIsLoggedIn(true)
       setLoginError(false)
       sessionStorage.setItem('bimora_admin_auth', 'true')
-      setInvitations(getLocalInvitations())
+      loadAllData()
       triggerToast('Selamat datang, Admin! 👋')
     } else {
       setLoginError(true)
@@ -137,12 +149,59 @@ export default function AdminDashboard() {
     sessionStorage.removeItem('bimora_admin_auth')
   }
 
-  // Open modal for creating new record
-  const handleCreateNew = () => {
-    setEditingItem(null)
+  // ----------------------------------------------------
+  // FILE / MEDIA UPLOADS
+  // ----------------------------------------------------
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => setter(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 4.5 * 1024 * 1024) {
+        alert('File terlalu besar! Maksimal 4.5MB untuk prototype database.')
+        return
+      }
+      const reader = new FileReader()
+      reader.onloadend = () => setMusicUrl(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    const remaining = 6 - gallery.length
+    if (remaining <= 0) {
+      triggerToast('Maksimal 6 foto galeri!')
+      return
+    }
+    files.slice(0, remaining).forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setGallery(prev => [...prev, reader.result as string].slice(0, 6))
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleRemoveGalleryImage = (index: number) => {
+    setGallery(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // ----------------------------------------------------
+  // INVITATION ACTIONS
+  // ----------------------------------------------------
+  const handleCreateInvitation = () => {
+    setEditingInvitation(null)
     setSlug('')
     setTemplateType('jawa')
-    setIsActive(true)
+    setIsInvitationActive(true)
     setGroomName('')
     setGroomNickname('')
     setGroomParents('')
@@ -152,11 +211,11 @@ export default function AdminDashboard() {
     setBrideParents('')
     setBridePhoto('/assets/mempelai/bride.png')
     setCouplePhoto('/assets/mempelai/mempelai.png')
-    setGallery([]) // Reset gallery
+    setGallery([])
     setStories([
-      { year: '2022', title: 'Pertama Bertemu', desc: 'Kami pertama kali bertemu di sebuah acara seminar teknologi di Kota Surakarta. Pertemuan singkat yang berkesan.' },
-      { year: '2024', title: 'Menjalin Komitmen', desc: 'Setelah dua tahun berteman baik, kami memutuskan untuk menjalin komitmen serius untuk melangkah ke jenjang pernikahan.' },
-      { year: '2026', title: 'Pernikahan Agung', desc: 'Hari di mana kami mengikat janji suci pernikahan di hadapan Allah SWT dan dipersatukan dalam ikatan keluarga.' }
+      { year: '2022', title: 'Pertama Bertemu', desc: 'Kami pertama kali bertemu di sebuah acara seminar teknologi.' },
+      { year: '2024', title: 'Menjalin Komitmen', desc: 'Setelah dua tahun berteman baik, kami memutuskan untuk menjalin komitmen serius.' },
+      { year: '2026', title: 'Pernikahan Agung', desc: 'Hari di mana kami mengikat janji suci pernikahan.' }
     ])
     setWeddingDate('2026-08-15')
     setAkadTime('08:00 - 10:00 WIB')
@@ -166,18 +225,15 @@ export default function AdminDashboard() {
     setMapsEmbed('https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.195029419177!2d110.80624027476343!3d-7.553683692460142!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a16efe15db5e1%3A0x6bcfd35bcfa2ebf9!2sGedung%20Graha%20Saba%20Buana!5e0!3m2!1sid!2sid!4v1700000000000')
     setMapsLink('https://maps.app.goo.gl/9Zc1zG29XvH2T1x27')
     setMusicUrl('/music/jawa.mp3')
-    setGifts([
-      { bank: 'BCA', number: '', name: '' }
-    ])
-    setShowModal(true)
+    setGifts([{ bank: 'BCA', number: '', name: '' }])
+    setShowInvitationModal(true)
   }
 
-  // Open modal for editing record
-  const handleEdit = (item: WeddingData) => {
-    setEditingItem(item)
+  const handleEditInvitation = (item: WeddingData) => {
+    setEditingInvitation(item)
     setSlug(item.slug)
     setTemplateType(item.template_type)
-    setIsActive(item.is_active)
+    setIsInvitationActive(item.is_active)
     setGroomName(item.groom_name)
     setGroomNickname(item.groom_nickname)
     setGroomParents(item.groom_parents)
@@ -187,12 +243,8 @@ export default function AdminDashboard() {
     setBrideParents(item.bride_parents)
     setBridePhoto(item.bride_photo)
     setCouplePhoto(item.couple_photo || '/assets/mempelai/mempelai.png')
-    setGallery(item.gallery || []) // Load existing gallery
-    setStories(item.stories || [
-      { year: '2022', title: 'Pertama Bertemu', desc: 'Kami pertama kali bertemu di sebuah acara seminar teknologi di Kota Surakarta. Pertemuan singkat yang berkesan.' },
-      { year: '2024', title: 'Menjalin Komitmen', desc: 'Setelah dua tahun berteman baik, kami memutuskan untuk menjalin komitmen serius untuk melangkah ke jenjang pernikahan.' },
-      { year: '2026', title: 'Pernikahan Agung', desc: 'Hari di mana kami mengikat janji suci pernikahan di hadapan Allah SWT dan dipersatukan dalam ikatan keluarga.' }
-    ])
+    setGallery(item.gallery || [])
+    setStories(item.stories || [])
     setWeddingDate(item.wedding_date)
     setAkadTime(item.akad_time || '08:00 - 10:00 WIB')
     setResepsiTime(item.resepsi_time || '11:00 - 14:00 WIB')
@@ -202,66 +254,35 @@ export default function AdminDashboard() {
     setMapsLink(item.maps_link)
     setMusicUrl(item.music_url)
     setGifts(item.gifts || [])
-    setShowModal(true)
+    setShowInvitationModal(true)
   }
 
-  const handleDelete = (slugToDelete: string) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus undangan dengan URL: /undangan/${slugToDelete}?`)) {
+  const handleDeleteInvitation = (slugToDelete: string) => {
+    if (window.confirm(`Hapus undangan /undangan/${slugToDelete}?`)) {
       deleteLocalInvitation(slugToDelete)
-      setInvitations(getLocalInvitations())
+      loadAllData()
       triggerToast('Undangan berhasil dihapus!')
     }
   }
 
-  const handleAddGiftField = () => {
-    setGifts([...gifts, { bank: '', number: '', name: '' }])
-  }
-
-  const handleRemoveGiftField = (index: number) => {
-    setGifts(gifts.filter((_, i) => i !== index))
-  }
-
-  const handleGiftChange = (index: number, field: 'bank' | 'number' | 'name', value: string) => {
-    const updated = [...gifts]
-    updated[index][field] = value
-    setGifts(updated)
-  }
-
-  const handleAddStory = () => {
-    setStories([...stories, { year: '', title: '', desc: '' }])
-  }
-
-  const handleRemoveStory = (index: number) => {
-    setStories(stories.filter((_, i) => i !== index))
-  }
-
-  const handleStoryChange = (index: number, field: 'year' | 'title' | 'desc', value: string) => {
-    const updated = [...stories]
-    updated[index][field] = value
-    setStories(updated)
-  }
-
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleInvitationFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!slug.trim()) return
-
-    // Validate slug (letters, numbers, hyphens only)
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
-    
-    // Check duplicates if creating new
-    if (!editingItem) {
+
+    if (!editingInvitation) {
       const exists = invitations.some(item => item.slug === cleanSlug)
       if (exists) {
-        alert('Slug URL sudah digunakan! Silakan pilih nama slug lain.')
+        alert('Slug URL sudah digunakan!')
         return
       }
     }
 
     const payload: WeddingData = {
-      id: editingItem ? editingItem.id : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9) + Date.now().toString(36)),
+      id: editingInvitation ? editingInvitation.id : (Math.random().toString(36).substring(2, 9) + Date.now().toString(36)),
       slug: cleanSlug,
       template_type: templateType,
-      is_active: isActive,
+      is_active: isInvitationActive,
       groom_name: groomName.trim(),
       groom_nickname: groomNickname.trim(),
       groom_parents: groomParents.trim(),
@@ -285,53 +306,258 @@ export default function AdminDashboard() {
     }
 
     addOrUpdateLocalInvitation(payload)
-    setInvitations(getLocalInvitations())
-    setShowModal(false)
-    triggerToast(editingItem ? 'Undangan diperbarui!' : 'Undangan baru ditambahkan!')
+    loadAllData()
+    setShowInvitationModal(false)
+    triggerToast(editingInvitation ? 'Undangan diperbarui!' : 'Undangan baru ditambahkan!')
   }
 
+  // ----------------------------------------------------
+  // PRODUCT ACTIONS
+  // ----------------------------------------------------
+  const handleDragStart = (clientX: number, clientY: number) => {
+    setIsDragging(true)
+    setDragStart({ x: clientX - cropX, y: clientY - cropY })
+  }
+
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (!isDragging) return
+    setCropX(clientX - dragStart.x)
+    setCropY(clientY - dragStart.y)
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    const iw = img.naturalWidth
+    const ih = img.naturalHeight
+    const container = cropperContainerRef.current
+    const containerW = container ? container.clientWidth : 400
+    const containerH = container ? container.clientHeight : 250
+    const scaleFit = Math.max(containerW / iw, containerH / ih)
+    setImageBaseDims({
+      w: iw * scaleFit,
+      h: ih * scaleFit
+    })
+  }
+
+  const handleCropProductImage = () => {
+    if (!rawProductImage || !imageBaseDims) return
+    const canvas = document.createElement('canvas')
+    canvas.width = 400
+    canvas.height = 250
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      const img = new Image()
+      img.onload = () => {
+        ctx.fillStyle = '#0f172a'
+        ctx.fillRect(0, 0, 400, 250)
+
+        const container = cropperContainerRef.current
+        const containerW = container ? container.clientWidth : 400
+        const scaleRatio = 400 / containerW
+
+        const drawW = imageBaseDims.w * cropScale * scaleRatio
+        const drawH = imageBaseDims.h * cropScale * scaleRatio
+
+        const x = (400 - drawW) / 2 + cropX * scaleRatio
+        const y = (250 - drawH) / 2 + cropY * scaleRatio
+
+        ctx.drawImage(img, x, y, drawW, drawH)
+        setPThumbnail(canvas.toDataURL('image/jpeg', 0.85))
+        setRawProductImage(null)
+        setImageBaseDims(null)
+      }
+      img.src = rawProductImage
+    }
+  }
+
+  const handleCreateProduct = () => {
+    setEditingProduct(null)
+    setPId(Date.now())
+    setPName('')
+    setPCategory('Adat Jawa')
+    setPPrice(149000)
+    setPOriginalPrice(199000)
+    setPRating(5)
+    setPReviews(10)
+    setPBadge('')
+    setPDesc('')
+    setPFeatures('Countdown Hari H, Love Story, Galeri Foto, Maps Interaktif, Form RSVP')
+    setPPreviewSlug('')
+    setPAvailable(true)
+    setPThumbnail('')
+    setRawProductImage(null)
+    setImageBaseDims(null)
+    setCropScale(1)
+    setCropX(0)
+    setCropY(0)
+    setShowProductModal(true)
+  }
+
+  const handleEditProduct = (prod: ProductData) => {
+    setEditingProduct(prod)
+    setPId(prod.id)
+    setPName(prod.name)
+    setPCategory(prod.category)
+    setPPrice(prod.price)
+    setPOriginalPrice(prod.originalPrice)
+    setPRating(prod.rating)
+    setPReviews(prod.reviews)
+    setPBadge(prod.badge)
+    setPDesc(prod.desc)
+    setPFeatures(prod.features.join(', '))
+    setPPreviewSlug(prod.previewSlug || '')
+    setPAvailable(prod.available)
+    setPThumbnail(prod.thumbnail || '')
+    setRawProductImage(null)
+    setImageBaseDims(null)
+    setCropScale(1)
+    setCropX(0)
+    setCropY(0)
+    setShowProductModal(true)
+  }
+
+  const handleDeleteProduct = (id: string | number) => {
+    if (window.confirm('Hapus produk ini?')) {
+      deleteLocalProduct(id)
+      loadAllData()
+      triggerToast('Produk berhasil dihapus!')
+    }
+  }
+
+  const handleProductFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!pName.trim()) return
+
+    const payload: ProductData = {
+      id: pId,
+      name: pName.trim(),
+      category: pCategory,
+      price: Number(pPrice),
+      originalPrice: Number(pOriginalPrice),
+      rating: Number(pRating),
+      reviews: Number(pReviews),
+      badge: pBadge.trim(),
+      desc: pDesc.trim(),
+      features: pFeatures.split(',').map(f => f.trim()).filter(Boolean),
+      previewSlug: pPreviewSlug.trim() || null,
+      available: pAvailable,
+      thumbnail: pThumbnail
+    }
+
+    addOrUpdateLocalProduct(payload)
+    loadAllData()
+    setShowProductModal(false)
+    triggerToast(editingProduct ? 'Produk diperbarui!' : 'Produk baru ditambahkan!')
+  }
+
+  // ----------------------------------------------------
+  // ORDER ACTIONS
+  // ----------------------------------------------------
+  const handleCreateOrder = () => {
+    setEditingOrder(null)
+    setOId('ORD-' + Math.floor(1000 + Math.random() * 9000))
+    setOCustomerName('')
+    setOCustomerPhone('')
+    setOProductName(products[0]?.name || 'Adat Jawa Premium')
+    setOOrderDate(new Date().toISOString().split('T')[0])
+    setOStatus('Menunggu Pembayaran')
+    setOTotalPrice(149000)
+    setShowOrderModal(true)
+  }
+
+  const handleEditOrder = (order: OrderData) => {
+    setEditingOrder(order)
+    setOId(order.id)
+    setOCustomerName(order.customerName)
+    setOCustomerPhone(order.customerPhone)
+    setOProductName(order.productName)
+    setOOrderDate(order.orderDate)
+    setOStatus(order.status)
+    setOTotalPrice(order.totalPrice)
+    setShowOrderModal(true)
+  }
+
+  const handleDeleteOrder = (id: string) => {
+    if (window.confirm('Hapus data pesanan ini?')) {
+      deleteLocalOrder(id)
+      loadAllData()
+      triggerToast('Pesanan berhasil dihapus!')
+    }
+  }
+
+  const handleOrderFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!oCustomerName.trim()) return
+
+    const payload: OrderData = {
+      id: oId,
+      customerName: oCustomerName.trim(),
+      customerPhone: oCustomerPhone.trim(),
+      productName: oProductName,
+      orderDate: oOrderDate,
+      status: oStatus,
+      totalPrice: Number(oTotalPrice)
+    }
+
+    addOrUpdateLocalOrder(payload)
+    loadAllData()
+    setShowOrderModal(false)
+    triggerToast(editingOrder ? 'Pesanan diperbarui!' : 'Pesanan baru ditambahkan!')
+  }
+
+  // format price helper
+  const formatPrice = (price: number) => {
+    return 'Rp ' + price.toLocaleString('id-ID')
+  }
+
+  // ----------------------------------------------------
   // LOGIN SCREEN
+  // ----------------------------------------------------
   if (!isLoggedIn) {
     return (
-      <div className="bg-amber-50 min-h-screen flex items-center justify-center font-body px-4">
-        <div className="bg-white border border-amber-200 p-8 rounded-lg w-full max-w-[380px] flex flex-col items-center">
-          <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-full flex items-center justify-center mb-4">
-            <span className="text-white font-heading font-bold text-2xl">B</span>
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center font-body px-4">
+        <div className="bg-white border border-slate-200 p-8 rounded-lg w-full max-w-[400px] flex flex-col items-center">
+          <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center mb-4">
+            <span className="text-white font-heading font-bold text-xl">B</span>
           </div>
-          <h1 className="font-heading text-2xl text-stone-800 tracking-widest font-bold">PORTAL ADMIN</h1>
-          <p className="font-body text-[10px] tracking-wider text-stone-400 uppercase mb-6 mt-1">Bimora Digital Dashboard</p>
+          <h1 className="font-heading text-xl text-stone-800 tracking-wider font-bold">Portal Admin Bimora</h1>
+          <p className="font-body text-xs text-stone-400 mb-6 mt-1 text-center">Silakan masukkan kata sandi akses admin</p>
 
           <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
-            <div className="relative">
-              <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1.5 font-semibold">Kata Sandi Akses</label>
+            <div>
+              <label className="block text-xs text-stone-500 mb-1.5 font-semibold">Kata Sandi</label>
               <div className="relative flex items-center">
-                <IoLockClosedOutline className="absolute left-3.5 text-amber-500 text-base pointer-events-none" />
-                <input 
-                  type="password" 
-                  placeholder="Masukkan kata sandi" 
+                <IoLockClosedOutline className="absolute left-3 text-emerald-600 text-base pointer-events-none" />
+                <input
+                  type="password"
+                  placeholder="Masukkan kata sandi (admin)"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none rounded-lg text-xs text-stone-800 font-body"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none rounded-lg text-xs text-stone-800 font-body"
                   required
                 />
               </div>
             </div>
 
             {loginError && (
-              <span className="text-[10px] text-red-500 font-medium text-center bg-red-50 py-1.5 px-3 rounded-lg border border-red-200">
+              <span className="text-[11px] text-red-500 font-medium text-center bg-red-50 py-1.5 px-3 rounded-lg border border-red-200">
                 Sandi salah! Silakan coba lagi.
               </span>
             )}
 
-            <button 
-              type="submit" 
-              className="mt-2 py-3 bg-amber-500 hover:bg-amber-600 text-white font-body text-xs font-bold tracking-widest uppercase rounded-lg transition-colors cursor-pointer"
+            <button
+              type="submit"
+              className="mt-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-body text-xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
             >
               Masuk Dashboard
             </button>
           </form>
 
-          <Link to="/" className="mt-6 text-[10px] tracking-widest uppercase text-stone-400 hover:text-amber-600 transition-colors flex items-center gap-1">
+          <Link to="/" className="mt-6 text-xs text-stone-400 hover:text-emerald-600 transition-colors flex items-center gap-1">
             <IoChevronBackOutline /> Kembali ke Beranda
           </Link>
         </div>
@@ -339,164 +565,639 @@ export default function AdminDashboard() {
     )
   }
 
-  // ADMIN DASHBOARD SCREEN
-  return (
-    <div className="bg-gray-50 text-stone-800 min-h-screen font-body">
-      
-      {/* HEADER */}
-      <header className="border-b border-stone-200 bg-white py-4 px-6 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-heading font-bold text-sm">B</span>
+  // ----------------------------------------------------
+  // RENDER SECTIONS
+  // ----------------------------------------------------
+  const renderDashboardTab = () => {
+    const totalSales = orders
+      .filter(o => o.status === 'Selesai')
+      .reduce((sum, o) => sum + o.totalPrice, 0)
+    const activeInvitesCount = invitations.filter(i => i.is_active).length
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Ringkasan Sistem</h1>
+          <p className="text-xs text-stone-400 mt-1">Berikut adalah ikhtisar operasional platform Bimora Digital saat ini.</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white border border-stone-200 p-5 rounded-lg flex items-center gap-4">
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-xl">
+              <IoWalletOutline />
             </div>
-            <span className="font-heading text-lg font-bold tracking-widest text-stone-800">BIMORA <span className="text-amber-500">ADMIN</span></span>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Pendapatan Selesai</p>
+              <h3 className="text-lg font-bold text-stone-800 mt-0.5">{formatPrice(totalSales)}</h3>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-xs font-medium text-stone-500 hover:text-amber-600 transition-colors">
-              Lihat Web
-            </Link>
-            <button 
-              onClick={handleLogout}
-              className="px-4 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-500 font-body text-[9px] tracking-wider uppercase font-semibold rounded-lg transition-colors cursor-pointer"
-            >
-              Keluar
-            </button>
+          <div className="bg-white border border-stone-200 p-5 rounded-lg flex items-center gap-4">
+            <div className="w-10 h-10 bg-green-50 text-green-600 rounded-lg flex items-center justify-center text-xl">
+              <IoMailOpenOutline />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Undangan Aktif</p>
+              <h3 className="text-lg font-bold text-stone-800 mt-0.5">{activeInvitesCount} / {invitations.length}</h3>
+            </div>
+          </div>
+
+          <div className="bg-white border border-stone-200 p-5 rounded-lg flex items-center gap-4">
+            <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center text-xl">
+              <IoCartOutline />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Total Template Produk</p>
+              <h3 className="text-lg font-bold text-stone-800 mt-0.5">{products.length} Desain</h3>
+            </div>
+          </div>
+
+          <div className="bg-white border border-stone-200 p-5 rounded-lg flex items-center gap-4">
+            <div className="w-10 h-10 bg-yellow-50 text-yellow-600 rounded-lg flex items-center justify-center text-xl">
+              <IoReceiptOutline />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Pesanan Diproses</p>
+              <h3 className="text-lg font-bold text-stone-800 mt-0.5">
+                {orders.filter(o => o.status === 'Diproses' || o.status === 'Menunggu Pembayaran').length} Pesanan
+              </h3>
+            </div>
           </div>
         </div>
-      </header>
 
-      {/* DASHBOARD CONTENT */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-stone-800">Daftar Undangan Klien</h1>
-            <p className="text-xs text-stone-400 mt-1">Kelola tautan dan isi undangan digital klien Anda di sini.</p>
+        {/* Recent Orders List */}
+        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="p-4 border-b border-stone-100 flex justify-between items-center">
+            <h3 className="font-heading font-semibold text-stone-800 text-sm">Pesanan Terbaru</h3>
+            <button 
+              onClick={() => setActiveTab('pesanan')}
+              className="text-xs text-emerald-600 font-semibold hover:underline"
+            >
+              Lihat Semua
+            </button>
           </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-stone-500 uppercase text-[10px] tracking-wider border-b border-stone-100">
+                  <th className="p-4 font-semibold">ID Pesanan</th>
+                  <th className="p-4 font-semibold">Nama Klien</th>
+                  <th className="p-4 font-semibold">Template</th>
+                  <th className="p-4 font-semibold">Tanggal</th>
+                  <th className="p-4 font-semibold">Total</th>
+                  <th className="p-4 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {orders.slice(0, 5).map(o => (
+                  <tr key={o.id} className="hover:bg-slate-50/55">
+                    <td className="p-4 font-mono font-bold text-emerald-600">{o.id}</td>
+                    <td className="p-4 font-semibold">{o.customerName}</td>
+                    <td className="p-4">{o.productName}</td>
+                    <td className="p-4">{o.orderDate}</td>
+                    <td className="p-4 font-bold">{formatPrice(o.totalPrice)}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        o.status === 'Selesai' ? 'bg-green-50 text-green-700' :
+                        o.status === 'Diproses' ? 'bg-emerald-50 text-emerald-700' :
+                        o.status === 'Dibatalkan' ? 'bg-red-50 text-red-700' :
+                        'bg-yellow-50 text-yellow-700'
+                      }`}>
+                        {o.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
+  const renderProdukTab = () => {
+    const filteredProds = products.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Manajemen Produk / Template</h1>
+            <p className="text-xs text-stone-400 mt-1">Atur harga, deskripsi, preview, dan visibilitas katalog produk Anda.</p>
+          </div>
           <button
-            onClick={handleCreateNew}
-            className="px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white font-body text-xs font-bold tracking-wider uppercase rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            onClick={handleCreateProduct}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <IoAddOutline className="text-base" /> Tambah Produk Baru
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white border border-stone-200 p-4 rounded-lg flex items-center">
+          <div className="relative flex-grow max-w-md">
+            <IoSearchOutline className="absolute left-3 top-2.5 text-stone-400 text-base" />
+            <input
+              type="text"
+              placeholder="Cari nama atau kategori produk..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
+            />
+          </div>
+        </div>
+
+        {/* Table List */}
+        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-stone-500 uppercase text-[10px] tracking-wider border-b border-stone-100">
+                  <th className="p-4 font-semibold">Produk</th>
+                  <th className="p-4 font-semibold">Kategori</th>
+                  <th className="p-4 font-semibold">Harga</th>
+                  <th className="p-4 font-semibold">Coretan</th>
+                  <th className="p-4 font-semibold">Preview</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {filteredProds.map(p => (
+                  <tr key={p.id} className="hover:bg-slate-50/55">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-9 rounded bg-slate-900 border border-stone-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                          {p.thumbnail ? (
+                            <img src={p.thumbnail} className="w-full h-full object-cover" alt={p.name} />
+                          ) : (
+                            <span className="text-[7px] text-stone-400 font-semibold uppercase">No Image</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-stone-800">{p.name}</div>
+                          <div className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{p.desc}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 bg-slate-100 rounded text-stone-600 text-[10px]">
+                        {p.category}
+                      </span>
+                    </td>
+                    <td className="p-4 font-semibold text-emerald-600">{formatPrice(p.price)}</td>
+                    <td className="p-4 text-stone-400 line-through">{formatPrice(p.originalPrice)}</td>
+                    <td className="p-4">
+                      {p.previewSlug ? (
+                        p.previewSlug.startsWith('http') || p.previewSlug.startsWith('/') ? (
+                          <a href={p.previewSlug} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">
+                            {p.previewSlug}
+                          </a>
+                        ) : (
+                          <a href={`/undangan/${p.previewSlug}`} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">
+                            /{p.previewSlug}
+                          </a>
+                        )
+                      ) : (
+                        <span className="text-stone-300">-</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${p.available ? 'bg-green-50 text-green-700' : 'bg-stone-100 text-stone-400'}`}>
+                        {p.available ? 'Tersedia' : 'Segera Hadir'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleEditProduct(p)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <IoCreateOutline className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Hapus"
+                        >
+                          <IoTrashOutline className="text-base" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredProds.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-10 text-stone-400">
+                      Tidak ada produk ditemukan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderPesananTab = () => {
+    const filteredOrders = orders.filter(o =>
+      o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.productName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Manajemen Pesanan</h1>
+            <p className="text-xs text-stone-400 mt-1">Kelola dan update status pemesanan template undangan dari klien.</p>
+          </div>
+          <button
+            onClick={handleCreateOrder}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <IoAddOutline className="text-base" /> Tambah Pesanan Baru
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white border border-stone-200 p-4 rounded-lg flex items-center">
+          <div className="relative flex-grow max-w-md">
+            <IoSearchOutline className="absolute left-3 top-2.5 text-stone-400 text-base" />
+            <input
+              type="text"
+              placeholder="Cari ID, Klien, atau Template..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
+            />
+          </div>
+        </div>
+
+        {/* Table List */}
+        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-stone-500 uppercase text-[10px] tracking-wider border-b border-stone-100">
+                  <th className="p-4 font-semibold">ID</th>
+                  <th className="p-4 font-semibold">Klien / Kontak</th>
+                  <th className="p-4 font-semibold">Template</th>
+                  <th className="p-4 font-semibold">Tanggal Pesan</th>
+                  <th className="p-4 font-semibold">Total Biaya</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {filteredOrders.map(o => (
+                  <tr key={o.id} className="hover:bg-slate-50/55">
+                    <td className="p-4 font-mono font-bold text-emerald-600">{o.id}</td>
+                    <td className="p-4">
+                      <div className="font-semibold text-stone-800">{o.customerName}</div>
+                      <div className="text-[10px] text-stone-400 mt-0.5">{o.customerPhone}</div>
+                    </td>
+                    <td className="p-4">{o.productName}</td>
+                    <td className="p-4">{o.orderDate}</td>
+                    <td className="p-4 font-bold">{formatPrice(o.totalPrice)}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        o.status === 'Selesai' ? 'bg-green-50 text-green-700' :
+                        o.status === 'Diproses' ? 'bg-emerald-50 text-emerald-700' :
+                        o.status === 'Dibatalkan' ? 'bg-red-50 text-red-700' :
+                        'bg-yellow-50 text-yellow-700'
+                      }`}>
+                        {o.status}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleEditOrder(o)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          title="Edit Status"
+                        >
+                          <IoCreateOutline className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOrder(o.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Hapus"
+                        >
+                          <IoTrashOutline className="text-base" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredOrders.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-10 text-stone-400">
+                      Tidak ada pesanan ditemukan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderTemplateTab = () => {
+    const filteredInvites = invitations.filter(i =>
+      i.groom_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      i.bride_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      i.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Manajemen Template Undangan Klien</h1>
+            <p className="text-xs text-stone-400 mt-1">Buat, edit, dan konfigurasi isi undangan digital (mempelai, peta, lagu, dll) milik klien.</p>
+          </div>
+          <button
+            onClick={handleCreateInvitation}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <IoAddOutline className="text-base" /> Tambah Undangan Baru
           </button>
         </div>
 
-        {/* INVITATION GRID / CARDS */}
-        {invitations.length === 0 ? (
-          <div className="border-2 border-dashed border-stone-200 rounded-lg p-16 text-center bg-white">
-            <IoTrashBinOutline className="text-5xl text-stone-300 mx-auto mb-4" />
-            <h3 className="font-heading text-lg text-stone-600">Belum Ada Undangan</h3>
-            <p className="text-xs text-stone-400 max-w-sm mx-auto mt-2">
-              Silakan klik tombol "Tambah Undangan Baru" di atas untuk membuat tautan undangan digital pertama Anda.
-            </p>
+        {/* Filters */}
+        <div className="bg-white border border-stone-200 p-4 rounded-lg flex items-center">
+          <div className="relative flex-grow max-w-md">
+            <IoSearchOutline className="absolute left-3 top-2.5 text-stone-400 text-base" />
+            <input
+              type="text"
+              placeholder="Cari nama mempelai atau slug..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
+            />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {invitations.map(item => (
-              <div 
-                key={item.id} 
-                className="bg-white border border-stone-200 rounded-lg p-5 flex flex-col justify-between hover:border-amber-300 transition-colors"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="px-2.5 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-body text-[9px] uppercase tracking-wider font-semibold">
-                      {item.template_type}
-                    </span>
-                    <span className={`flex items-center gap-1.5 text-[10px] font-medium ${item.is_active ? 'text-green-600' : 'text-stone-400'}`}>
-                      <span className={`w-2 h-2 rounded-full ${item.is_active ? 'bg-green-500' : 'bg-stone-300'}`} />
-                      {item.is_active ? 'Aktif' : 'Nonaktif'}
-                    </span>
-                  </div>
+        </div>
 
-                  <h3 className="font-heading text-lg text-stone-800 font-semibold">
-                    {item.groom_nickname} &amp; {item.bride_nickname}
-                  </h3>
-                  
-                  <div className="text-[10px] text-stone-400 mt-2 flex flex-col gap-1">
-                    <div>URL: <span className="text-amber-600 select-all font-mono">/undangan/{item.slug}</span></div>
-                    <div>Tanggal: <span className="text-stone-600">{item.wedding_date}</span></div>
-                    <div>Tempat: <span className="text-stone-600 truncate block mt-0.5">{item.location_name}</span></div>
-                  </div>
-                </div>
-
-                <div className="w-full h-px bg-stone-100 my-4" />
-
-                <div className="grid grid-cols-3 gap-2">
-                  <a 
-                    href={`/undangan/${item.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2 border border-stone-200 hover:border-amber-400 text-stone-500 hover:text-amber-600 font-body text-[9px] tracking-wider uppercase font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <IoEyeOutline className="text-xs" /> Lihat
-                  </a>
-
-                  <button 
-                    onClick={() => handleEdit(item)}
-                    className="py-2 bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-500 hover:text-white font-body text-[9px] tracking-wider uppercase font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <IoCreateOutline className="text-xs" /> Edit
-                  </button>
-
-                  <button 
-                    onClick={() => handleDelete(item.slug)}
-                    className="py-2 bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white font-body text-[9px] tracking-wider uppercase font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <IoTrashOutline className="text-xs" /> Hapus
-                  </button>
-                </div>
-              </div>
-            ))}
+        {/* Table List */}
+        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-stone-500 uppercase text-[10px] tracking-wider border-b border-stone-100">
+                  <th className="p-4 font-semibold">Pasangan</th>
+                  <th className="p-4 font-semibold">Tautan URL</th>
+                  <th className="p-4 font-semibold">Tipe Template</th>
+                  <th className="p-4 font-semibold">Tanggal Nikah</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {filteredInvites.map(item => (
+                  <tr key={item.id} className="hover:bg-slate-50/55">
+                    <td className="p-4 font-semibold text-stone-800">
+                      {item.groom_nickname} &amp; {item.bride_nickname}
+                    </td>
+                    <td className="p-4 font-mono">
+                      <a
+                        href={`/undangan/${item.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-600 hover:text-emerald-800 font-medium hover:underline"
+                      >
+                        /undangan/{item.slug}
+                      </a>
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded text-[10px] uppercase font-semibold">
+                        {item.template_type}
+                      </span>
+                    </td>
+                    <td className="p-4">{item.wedding_date}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${item.is_active ? 'bg-green-50 text-green-700' : 'bg-stone-100 text-stone-400'}`}>
+                        {item.is_active ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-center gap-1.5">
+                        <a
+                          href={`/undangan/${item.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-stone-500 hover:text-emerald-600 hover:bg-slate-100 rounded transition-colors"
+                          title="Lihat Website"
+                        >
+                          <IoEyeOutline className="text-base" />
+                        </a>
+                        <button
+                          onClick={() => handleEditInvitation(item)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <IoCreateOutline className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteInvitation(item.slug)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Hapus"
+                        >
+                          <IoTrashOutline className="text-base" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredInvites.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-10 text-stone-400">
+                      Belum ada undangan klien.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-slate-50 text-stone-800 min-h-screen font-body flex flex-col md:flex-row">
+      
+      {/* SIDEBAR (Desktop) */}
+      <aside className="hidden md:flex w-64 bg-slate-950 text-slate-300 flex-col shrink-0">
+        <div className="p-5 border-b border-slate-900 flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-heading font-bold text-sm">B</span>
+          </div>
+          <span className="font-heading text-base font-bold tracking-wider text-white">BIMORA <span className="text-emerald-500">ADMIN</span></span>
+        </div>
+
+        <nav className="p-4 flex-grow space-y-1">
+          <button
+            onClick={() => { setActiveTab('dashboard'); setSearchQuery('') }}
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
+              activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            }`}
+          >
+            <IoHomeOutline className="text-base" /> Dashboard
+          </button>
+          
+          <button
+            onClick={() => { setActiveTab('produk'); setSearchQuery('') }}
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
+              activeTab === 'produk' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            }`}
+          >
+            <IoCartOutline className="text-base" /> Produk / Katalog
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('pesanan'); setSearchQuery('') }}
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
+              activeTab === 'pesanan' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            }`}
+          >
+            <IoReceiptOutline className="text-base" /> Pesanan
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('template'); setSearchQuery('') }}
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
+              activeTab === 'template' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            }`}
+          >
+            <IoMailOpenOutline className="text-base" /> Template Undangan
+          </button>
+        </nav>
+
+        <div className="p-4 border-t border-slate-900">
+          <a href="/" target="_blank" rel="noreferrer" className="block text-center text-[10px] uppercase font-bold tracking-wider py-2 bg-slate-900 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors mb-2">
+            Lihat Website Utama
+          </a>
+          <button
+            onClick={handleLogout}
+            className="w-full py-2 bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <IoLogOutOutline className="text-base" /> Keluar
+          </button>
+        </div>
+      </aside>
+
+      {/* HEADER (Mobile & Tablet) */}
+      <header className="md:hidden bg-slate-950 border-b border-slate-900 text-white py-3 px-4 flex justify-between items-center sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-heading font-bold text-xs">B</span>
+          </div>
+          <span className="font-heading text-sm font-bold tracking-wide">BIMORA ADMIN</span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-1 text-slate-400 hover:text-white text-2xl"
+        >
+          <IoMenuOutline />
+        </button>
+      </header>
+
+      {/* MOBILE MENU NAV */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-slate-950 border-b border-slate-900 text-slate-300 flex flex-col p-4 space-y-2 sticky top-[53px] z-30">
+          <button
+            onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); setSearchQuery('') }}
+            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : ''}`}
+          >
+            <IoHomeOutline /> Dashboard
+          </button>
+          <button
+            onClick={() => { setActiveTab('produk'); setMobileMenuOpen(false); setSearchQuery('') }}
+            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'produk' ? 'bg-emerald-600 text-white' : ''}`}
+          >
+            <IoCartOutline /> Produk / Katalog
+          </button>
+          <button
+            onClick={() => { setActiveTab('pesanan'); setMobileMenuOpen(false); setSearchQuery('') }}
+            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'pesanan' ? 'bg-emerald-600 text-white' : ''}`}
+          >
+            <IoReceiptOutline /> Pesanan
+          </button>
+          <button
+            onClick={() => { setActiveTab('template'); setMobileMenuOpen(false); setSearchQuery('') }}
+            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'template' ? 'bg-emerald-600 text-white' : ''}`}
+          >
+            <IoMailOpenOutline /> Template Undangan
+          </button>
+          <div className="pt-2 border-t border-slate-900 flex justify-between gap-2">
+            <a href="/" target="_blank" className="flex-grow text-center py-2 bg-slate-900 text-[10px] font-bold rounded-lg text-slate-400">Web Utama</a>
+            <button onClick={handleLogout} className="px-4 py-2 bg-red-950 text-red-400 text-xs font-bold rounded-lg">Keluar</button>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN CONTAINER */}
+      <main className="flex-grow p-4 sm:p-8 overflow-y-auto max-h-screen">
+        {activeTab === 'dashboard' && renderDashboardTab()}
+        {activeTab === 'produk' && renderProdukTab()}
+        {activeTab === 'pesanan' && renderPesananTab()}
+        {activeTab === 'template' && renderTemplateTab()}
       </main>
 
-      {/* FORM MODAL (ADD / EDIT INVITATION) */}
-      {showModal && (
+      {/* ==================================================== */}
+      {/* MODAL 1: TEMPLATE INVITATION FORM */}
+      {/* ==================================================== */}
+      {showInvitationModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto no-scrollbar">
           <div className="bg-white border border-stone-200 rounded-lg w-full max-w-[820px] relative flex flex-col max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="border-b border-stone-200 p-5 flex justify-between items-center bg-amber-50">
-              <h2 className="font-heading text-lg text-stone-800 font-bold">
-                {editingItem ? 'Edit Data Undangan Klien' : 'Buat Undangan Klien Baru'}
+            {/* Header */}
+            <div className="border-b border-stone-200 p-5 flex justify-between items-center bg-emerald-50">
+              <h2 className="font-heading text-base text-emerald-900 font-bold">
+                {editingInvitation ? 'Edit Data Undangan Klien' : 'Buat Undangan Klien Baru'}
               </h2>
-              <button 
-                onClick={() => setShowModal(false)}
-                className="text-2xl text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
-              >
+              <button onClick={() => setShowInvitationModal(false)} className="text-xl text-stone-400 hover:text-stone-700 cursor-pointer">
                 <IoCloseOutline />
               </button>
             </div>
 
-            {/* Modal Scroll Body */}
-            <form id="invitation-form" onSubmit={handleFormSubmit} className="overflow-y-auto p-6 flex-grow flex flex-col gap-6 no-scrollbar bg-white">
-              
-              {/* SECTION: SYSTEM / LINK CONFIG */}
+            {/* Scrollable Body */}
+            <form id="invitation-form" onSubmit={handleInvitationFormSubmit} className="overflow-y-auto p-6 flex-grow flex flex-col gap-6 no-scrollbar bg-white">
+              {/* SYSTEM CONFIG */}
               <div>
-                <h3 className="font-heading text-sm text-amber-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">1. Pengaturan Tautan &amp; Status</h3>
+                <h3 className="font-heading text-xs text-emerald-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">1. Pengaturan Tautan &amp; Status</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[9.5px] uppercase tracking-wider text-stone-500 mb-1.5 font-medium">Slug URL Undangan</label>
-                    <input 
-                      type="text" 
-                      placeholder="contoh: bimantara-clara" 
+                    <label className="block text-[10px] text-stone-500 mb-1 font-semibold">SLUG URL UNDANGAN</label>
+                    <input
+                      type="text"
+                      placeholder="contoh: bimantara-clara"
                       value={slug}
                       onChange={e => setSlug(e.target.value)}
-                      disabled={!!editingItem}
-                      className="w-full px-4 py-2.5 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-mono disabled:opacity-50"
+                      disabled={!!editingInvitation}
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs disabled:opacity-50 font-mono"
                       required
                     />
-                    <span className="text-[8.5px] text-jawa-cream/40 mt-1 block">*Hanya huruf kecil, angka, dan strip</span>
+                    <span className="text-[9px] text-stone-400 mt-1 block">*Hanya huruf kecil, angka, dan strip (-)</span>
                   </div>
 
                   <div>
-                    <label className="block text-[9.5px] uppercase tracking-wider text-stone-500 mb-1.5 font-medium">Pilihan Desain Template</label>
-                    <select 
+                    <label className="block text-[10px] text-stone-500 mb-1 font-semibold">PILIHAN DESAIN TEMPLATE</label>
+                    <select
                       value={templateType}
                       onChange={e => setTemplateType(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 cursor-pointer"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                     >
                       <option value="jawa">Adat Jawa Premium</option>
                       <option value="modern" disabled>Modern Emerald (Coming Soon)</option>
@@ -504,213 +1205,173 @@ export default function AdminDashboard() {
                   </div>
 
                   <div>
-                    <label className="block text-[9.5px] uppercase tracking-wider text-stone-500 mb-1.5 font-medium">Status Undangan</label>
-                    <select 
-                      value={isActive ? 'aktif' : 'nonaktif'}
-                      onChange={e => setIsActive(e.target.value === 'aktif')}
-                      className="w-full px-4 py-2.5 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 cursor-pointer"
+                    <label className="block text-[10px] text-stone-500 mb-1 font-semibold">STATUS UNDANGAN</label>
+                    <select
+                      value={isInvitationActive ? 'aktif' : 'nonaktif'}
+                      onChange={e => setIsInvitationActive(e.target.value === 'aktif')}
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                     >
-                      <option value="aktif">Aktif (Bisa Diakses)</option>
+                      <option value="aktif">Aktif (Dapat Diakses)</option>
                       <option value="nonaktif">Nonaktif (Masa Aktif Habis)</option>
                     </select>
                   </div>
                 </div>
               </div>
 
-              {/* SECTION: GROOM & BRIDE DATA */}
+              {/* MEMPELAI DATA */}
               <div>
-                <h3 className="font-heading text-sm text-amber-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">2. Informasi Pengantin Pria &amp; Wanita</h3>
+                <h3 className="font-heading text-xs text-emerald-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">2. Informasi Pengantin</h3>
                 
-                {/* Foto Bersama (Couple Photo) - Upload dari Device */}
-                <div className="border border-stone-200 p-4 rounded-lg bg-stone-50 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex flex-col">
-                    <h4 className="font-heading text-xs text-amber-600 font-bold uppercase">Foto Bersama / Prewedding Utama</h4>
-                    <span className="text-[8.5px] text-jawa-cream/50 mt-0.5 font-body">Ditampilkan di bagian atas halaman Mempelai sebagai foto portrait utama pasangan.</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {couplePhoto && (
-                      <img src={couplePhoto} className="w-14 h-14 object-cover rounded-lg border border-jawa-gold/25 bg-black" alt="Couple Portrait Preview" />
-                    )}
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={e => handleFileUpload(e, setCouplePhoto)}
-                      className="text-[10px] text-jawa-cream file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9.5px] file:font-semibold file:bg-jawa-gold file:text-black hover:file:bg-jawa-gold-dark file:cursor-pointer"
-                    />
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Mempelai Pria */}
-                  <div className="border border-stone-200 p-4 rounded-lg bg-stone-50 flex flex-col gap-4">
-                    <h4 className="font-heading text-xs text-amber-600 font-bold mb-1 uppercase">Mempelai Pria</h4>
-                    
+                  {/* Pria */}
+                  <div className="border border-stone-100 p-4 rounded-lg bg-slate-50/50 flex flex-col gap-3">
+                    <h4 className="font-heading text-xs text-emerald-700 font-bold uppercase mb-1">Mempelai Pria</h4>
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Nama Panggilan</label>
-                      <input 
-                        type="text" 
-                        placeholder="contoh: Bimantara" 
+                      <label className="block text-[9px] text-stone-500 mb-1">NAMA PANGGILAN</label>
+                      <input
+                        type="text"
+                        placeholder="contoh: Bimantara"
                         value={groomNickname}
                         onChange={e => setGroomNickname(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                        className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                         required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Nama Lengkap &amp; Gelar</label>
-                      <input 
-                        type="text" 
-                        placeholder="contoh: Bimantara Al Rasyid, S.Kom." 
+                      <label className="block text-[9px] text-stone-500 mb-1">NAMA LENGKAP & GELAR</label>
+                      <input
+                        type="text"
+                        placeholder="contoh: Bimantara Al Rasyid, S.Kom."
                         value={groomName}
                         onChange={e => setGroomName(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                        className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                         required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Keterangan Orang Tua</label>
-                      <textarea 
+                      <label className="block text-[9px] text-stone-500 mb-1">KETERANGAN ORANG TUA</label>
+                      <textarea
                         rows={2}
-                        placeholder="contoh: Putra Pertama dari Bapak H. Ahmad & Ibu Hj. Siti" 
+                        placeholder="contoh: Putra Pertama dari Bapak H. Ahmad & Ibu Hj. Siti"
                         value={groomParents}
                         onChange={e => setGroomParents(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body resize-none"
+                        className="w-full px-3 py-1 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs resize-none"
                         required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Foto Mempelai Pria</label>
-                      <div className="flex flex-col gap-2">
-                        {groomPhoto && (
-                          <img src={groomPhoto} className="w-16 h-16 object-cover rounded-lg border border-jawa-gold/25 bg-black" alt="Groom Preview" />
-                        )}
-                        <input 
-                          type="file" 
+                      <label className="block text-[9px] text-stone-500 mb-1">FOTO PORTRAIT PRIA</label>
+                      <div className="flex items-center gap-3">
+                        {groomPhoto && <img src={groomPhoto} className="w-12 h-12 object-cover rounded-lg border border-stone-200" alt="Groom" />}
+                        <input
+                          type="file"
                           accept="image/*"
                           onChange={e => handleFileUpload(e, setGroomPhoto)}
-                          className="w-full text-[10px] text-jawa-cream file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9px] file:font-semibold file:bg-jawa-gold/20 file:text-jawa-gold hover:file:bg-jawa-gold/30 file:cursor-pointer"
+                          className="text-[10px] file:py-1 file:px-2 file:border-0 file:bg-emerald-50 file:text-emerald-700 file:rounded file:font-bold hover:file:bg-emerald-100 cursor-pointer"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Mempelai Wanita */}
-                  <div className="border border-stone-200 p-4 rounded-lg bg-stone-50 flex flex-col gap-4">
-                    <h4 className="font-heading text-xs text-amber-600 font-bold mb-1 uppercase">Mempelai Wanita</h4>
-                    
+                  {/* Wanita */}
+                  <div className="border border-stone-100 p-4 rounded-lg bg-slate-50/50 flex flex-col gap-3">
+                    <h4 className="font-heading text-xs text-emerald-700 font-bold uppercase mb-1">Mempelai Wanita</h4>
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Nama Panggilan</label>
-                      <input 
-                        type="text" 
-                        placeholder="contoh: Claraveliana" 
+                      <label className="block text-[9px] text-stone-500 mb-1">NAMA PANGGILAN</label>
+                      <input
+                        type="text"
+                        placeholder="contoh: Claraveliana"
                         value={brideNickname}
                         onChange={e => setBrideNickname(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                        className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                         required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Nama Lengkap &amp; Gelar</label>
-                      <input 
-                        type="text" 
-                        placeholder="contoh: Claraveliana Putri, S.Pd." 
+                      <label className="block text-[9px] text-stone-500 mb-1">NAMA LENGKAP & GELAR</label>
+                      <input
+                        type="text"
+                        placeholder="contoh: Claraveliana Putri, S.Pd."
                         value={brideName}
                         onChange={e => setBrideName(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                        className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                         required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Keterangan Orang Tua</label>
-                      <textarea 
+                      <label className="block text-[9px] text-stone-500 mb-1">KETERANGAN ORANG TUA</label>
+                      <textarea
                         rows={2}
-                        placeholder="contoh: Putri Kedua dari Bapak H. Bambang & Ibu Hj. Ratna" 
+                        placeholder="contoh: Putri Kedua dari Bapak H. Bambang & Ibu Hj. Ratna"
                         value={brideParents}
                         onChange={e => setBrideParents(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body resize-none"
+                        className="w-full px-3 py-1 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs resize-none"
                         required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Foto Mempelai Wanita</label>
-                      <div className="flex flex-col gap-2">
-                        {bridePhoto && (
-                          <img src={bridePhoto} className="w-16 h-16 object-cover rounded-lg border border-jawa-gold/25 bg-black" alt="Bride Preview" />
-                        )}
-                        <input 
-                          type="file" 
+                      <label className="block text-[9px] text-stone-500 mb-1">FOTO PORTRAIT WANITA</label>
+                      <div className="flex items-center gap-3">
+                        {bridePhoto && <img src={bridePhoto} className="w-12 h-12 object-cover rounded-lg border border-stone-200" alt="Bride" />}
+                        <input
+                          type="file"
                           accept="image/*"
                           onChange={e => handleFileUpload(e, setBridePhoto)}
-                          className="w-full text-[10px] text-jawa-cream file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9px] file:font-semibold file:bg-jawa-gold/20 file:text-jawa-gold hover:file:bg-jawa-gold/30 file:cursor-pointer"
+                          className="text-[10px] file:py-1 file:px-2 file:border-0 file:bg-emerald-50 file:text-emerald-700 file:rounded file:font-bold hover:file:bg-emerald-100 cursor-pointer"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Foto Bersama / Couple */}
-                <div className="border border-stone-200 p-4 rounded-lg bg-stone-50 mt-4">
-                  <h4 className="font-heading text-xs text-amber-600 font-bold mb-3 uppercase">Foto Bersama / Sampul Berdua</h4>
-                  <div className="flex flex-col md:flex-row gap-4 items-center">
-                    {couplePhoto && (
-                      <img src={couplePhoto} className="w-full md:w-48 h-32 object-cover rounded-lg border border-jawa-gold/25 bg-black" alt="Couple Preview" />
-                    )}
-                    <div className="flex-grow w-full">
-                      <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1.5">Unggah Foto Bersama (Berdua)</label>
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={e => handleFileUpload(e, setCouplePhoto)}
-                        className="w-full text-[10px] text-jawa-cream file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[9.5px] file:font-semibold file:bg-jawa-gold/20 file:text-jawa-gold hover:file:bg-jawa-gold/30 file:cursor-pointer"
-                      />
-                      <p className="text-[8.5px] text-jawa-cream/45 mt-2">Disarankan menggunakan foto landscape atau portrait dengan rasio seimbang untuk tampilan sampul dan bagian pembuka.</p>
-                    </div>
+                {/* Prewedding Photo */}
+                <div className="border border-stone-100 p-4 rounded-lg bg-slate-50/50 mt-4 flex flex-col md:flex-row gap-4 items-center">
+                  {couplePhoto && <img src={couplePhoto} className="w-32 h-20 object-cover rounded-lg border border-stone-200" alt="Couple" />}
+                  <div className="flex-grow">
+                    <label className="block text-[9px] text-stone-500 mb-1">FOTO BERSAMA / SAMPUL UTAMA</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleFileUpload(e, setCouplePhoto)}
+                      className="text-[10px] file:py-1 file:px-2.5 file:border-0 file:bg-emerald-50 file:text-emerald-700 file:rounded file:font-bold hover:file:bg-emerald-100 cursor-pointer"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION: DATES, LOGISTICS & MAPS */}
+              {/* LOGISTICS & MAPS */}
               <div>
-                <h3 className="font-heading text-sm text-amber-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">3. Jadwal Acara &amp; Peta Lokasi</h3>
-                
+                <h3 className="font-heading text-xs text-emerald-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">3. Waktu &amp; Lokasi Acara</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Tanggal Pernikahan (Countdown)</label>
-                    <input 
-                      type="date" 
+                    <label className="block text-[10px] text-stone-500 mb-1">TANGGAL COUNTDOWN HARI H</label>
+                    <input
+                      type="date"
                       value={weddingDate}
                       onChange={e => setWeddingDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                       required
                     />
                   </div>
-
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Jam Akad Nikah</label>
-                    <input 
-                      type="text" 
-                      placeholder="contoh: 08:00 - 10:00 WIB" 
+                    <label className="block text-[10px] text-stone-500 mb-1">WAKTU AKAD NIKAH</label>
+                    <input
+                      type="text"
+                      placeholder="contoh: 08:00 - 10:00 WIB"
                       value={akadTime}
                       onChange={e => setAkadTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                       required
                     />
                   </div>
-
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Jam Resepsi</label>
-                    <input 
-                      type="text" 
-                      placeholder="contoh: 11:00 WIB - Selesai" 
+                    <label className="block text-[10px] text-stone-500 mb-1">WAKTU RESEPSI</label>
+                    <input
+                      type="text"
+                      placeholder="contoh: 11:00 - 14:00 WIB"
                       value={resepsiTime}
                       onChange={e => setResepsiTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                       required
                     />
                   </div>
@@ -718,218 +1379,223 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Nama Tempat Acara</label>
-                    <input 
-                      type="text" 
-                      placeholder="contoh: Gedung Graha Saba Buana" 
+                    <label className="block text-[10px] text-stone-500 mb-1">NAMA LOKASI ACARA</label>
+                    <input
+                      type="text"
+                      placeholder="contoh: Gedung Graha Saba Buana"
                       value={locationName}
                       onChange={e => setLocationName(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                       required
                     />
                   </div>
-
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Alamat Lengkap</label>
-                    <input 
-                      type="text" 
-                      placeholder="Masukkan alamat lengkap lokasi pernikahan" 
+                    <label className="block text-[10px] text-stone-500 mb-1">ALAMAT LENGKAP LOKASI</label>
+                    <input
+                      type="text"
+                      placeholder="Alamat jalan lengkap..."
                       value={locationAddress}
                       onChange={e => setLocationAddress(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                       required
                     />
                   </div>
-
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Google Maps (Embed Iframe Src)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Tempel tautan https://google.com/maps/embed?..." 
+                    <label className="block text-[10px] text-stone-500 mb-1">GOOGLE MAPS EMBED SRC (IFRAME URL)</label>
+                    <input
+                      type="text"
+                      placeholder="https://www.google.com/maps/embed?pb=..."
                       value={mapsEmbed}
                       onChange={e => setMapsEmbed(e.target.value)}
-                      className="w-full px-3 py-2 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-[9.5px] text-stone-600 font-mono"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs font-mono"
                       required
                     />
                   </div>
-
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Google Maps (Direct Link)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Tempel tautan berbagi https://maps.app.goo.gl/..." 
+                    <label className="block text-[10px] text-stone-500 mb-1">GOOGLE MAPS SHARE LINK (DIRECT URL)</label>
+                    <input
+                      type="text"
+                      placeholder="https://maps.app.goo.gl/..."
                       value={mapsLink}
                       onChange={e => setMapsLink(e.target.value)}
-                      className="w-full px-3 py-2 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-[9.5px] text-stone-600 font-mono"
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs font-mono"
                       required
                     />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION: LOVE STORY */}
+              {/* PERJALANAN CINTA */}
               <div>
-                <div className="flex justify-between items-center border-b border-jawa-gold/10 pb-1.5 mb-4">
-                  <h3 className="font-heading text-sm text-amber-600 tracking-wide uppercase">4. Perjalanan Cinta (Love Story)</h3>
+                <div className="flex justify-between items-center border-b border-stone-200 pb-1.5 mb-4">
+                  <h3 className="font-heading text-xs text-emerald-600 tracking-wide uppercase">4. Kisah Perjalanan (Timeline)</h3>
                   <button
                     type="button"
-                    onClick={handleAddStory}
-                    className="px-3 py-1 bg-jawa-gold/15 hover:bg-jawa-gold border border-jawa-gold/30 hover:border-jawa-gold text-jawa-gold hover:text-black font-body text-[8.5px] tracking-wider uppercase font-semibold rounded-lg transition-all"
+                    onClick={() => setStories([...stories, { year: '', title: '', desc: '' }])}
+                    className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[9px] font-bold uppercase rounded-lg transition-colors"
                   >
-                    Tambah Cerita
+                    Tambah Momen
                   </button>
                 </div>
-
-                <div className="flex flex-col gap-3">
+                <div className="space-y-3">
                   {stories.map((story, idx) => (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-black/10 border border-stone-200 p-3 rounded-lg items-start">
-                      <div className="md:col-span-1">
-                        <label className="block text-[8px] uppercase tracking-wider text-stone-400 mb-1 font-medium">Tahun / Waktu</label>
-                        <input 
-                          type="text" 
-                          placeholder="contoh: 2022" 
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50/50 p-3 border border-stone-100 rounded-lg">
+                      <div>
+                        <label className="block text-[9px] text-stone-400 mb-1">TAHUN</label>
+                        <input
+                          type="text"
+                          placeholder="2022"
                           value={story.year}
-                          onChange={e => handleStoryChange(idx, 'year', e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-xs text-jawa-cream"
+                          onChange={e => {
+                            const updated = [...stories]
+                            updated[idx].year = e.target.value
+                            setStories(updated)
+                          }}
+                          className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                           required
                         />
                       </div>
-
-                      <div className="md:col-span-1">
-                        <label className="block text-[8px] uppercase tracking-wider text-stone-400 mb-1 font-medium">Judul Momen</label>
-                        <input 
-                          type="text" 
-                          placeholder="contoh: Pertama Bertemu" 
+                      <div>
+                        <label className="block text-[9px] text-stone-400 mb-1">JUDUL MOMEN</label>
+                        <input
+                          type="text"
+                          placeholder="Pertama Bertemu"
                           value={story.title}
-                          onChange={e => handleStoryChange(idx, 'title', e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-xs text-jawa-cream"
+                          onChange={e => {
+                            const updated = [...stories]
+                            updated[idx].title = e.target.value
+                            setStories(updated)
+                          }}
+                          className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                           required
                         />
                       </div>
-
                       <div className="md:col-span-2 flex gap-3 items-end">
                         <div className="flex-grow">
-                          <label className="block text-[8px] uppercase tracking-wider text-stone-400 mb-1 font-medium">Deskripsi Cerita</label>
-                          <textarea 
-                            rows={2}
-                            placeholder="Ceritakan momen bahagia ini..." 
+                          <label className="block text-[9px] text-stone-400 mb-1">DESKRIPSI KISAH</label>
+                          <textarea
+                            rows={1}
+                            placeholder="Ceritakan momen ini..."
                             value={story.desc}
-                            onChange={e => handleStoryChange(idx, 'desc', e.target.value)}
-                            className="w-full px-3 py-1 bg-white border border-stone-200 focus:border-amber-400 outline-none rounded-lg text-xs text-stone-800 font-body resize-none"
+                            onChange={e => {
+                              const updated = [...stories]
+                              updated[idx].desc = e.target.value
+                              setStories(updated)
+                            }}
+                            className="w-full px-3 py-1 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs resize-none"
                             required
                           />
                         </div>
-
                         <button
                           type="button"
-                          onClick={() => handleRemoveStory(idx)}
-                          className="py-2.5 px-3 bg-red-950/20 border border-red-950/40 hover:bg-red-950 hover:border-red-900 text-red-400 font-body text-[9px] tracking-wider uppercase font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer self-start mt-5"
-                          title="Hapus Momen"
+                          onClick={() => setStories(stories.filter((_, i) => i !== idx))}
+                          className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded border border-red-200 cursor-pointer"
                         >
                           <IoTrashOutline />
                         </button>
                       </div>
                     </div>
                   ))}
-                  {stories.length === 0 && (
-                    <div className="text-center text-[10px] text-jawa-cream/40 py-4 border border-dashed border-jawa-gold/10 rounded-xl">
-                      Belum ada kisah yang ditambahkan. Klik "Tambah Cerita" untuk menambahkan perjalanan cinta Anda.
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* SECTION: GIFTS / GIFT REKENING */}
+              {/* TANDA KASIH / BANK */}
               <div>
-                <div className="flex justify-between items-center border-b border-jawa-gold/10 pb-1.5 mb-4">
-                  <h3 className="font-heading text-sm text-amber-600 tracking-wide uppercase">5. Tanda Kasih / Rekening Kado</h3>
+                <div className="flex justify-between items-center border-b border-stone-200 pb-1.5 mb-4">
+                  <h3 className="font-heading text-xs text-emerald-600 tracking-wide uppercase">5. Rekening Hadiah (Kado Digital)</h3>
                   <button
                     type="button"
-                    onClick={handleAddGiftField}
-                    className="px-3 py-1 bg-jawa-gold/15 hover:bg-jawa-gold border border-jawa-gold/30 hover:border-jawa-gold text-jawa-gold hover:text-black font-body text-[8.5px] tracking-wider uppercase font-semibold rounded-lg transition-all"
+                    onClick={() => setGifts([...gifts, { bank: '', number: '', name: '' }])}
+                    className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[9px] font-bold uppercase rounded-lg transition-colors"
                   >
                     Tambah Rekening
                   </button>
                 </div>
-
-                <div className="flex flex-col gap-3">
+                <div className="space-y-3">
                   {gifts.map((gift, idx) => (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-black/10 border border-stone-200 p-3 rounded-lg items-end">
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50/50 p-3 border border-stone-100 rounded-lg items-end">
                       <div>
-                        <label className="block text-[8px] uppercase tracking-wider text-stone-400 mb-1">Nama Bank / Dompet</label>
-                        <input 
-                          type="text" 
-                          placeholder="contoh: BCA / Mandiri" 
+                        <label className="block text-[9px] text-stone-400 mb-1">BANK / DOMPET</label>
+                        <input
+                          type="text"
+                          placeholder="BCA / Mandiri"
                           value={gift.bank}
-                          onChange={e => handleGiftChange(idx, 'bank', e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-xs text-jawa-cream"
+                          onChange={e => {
+                            const updated = [...gifts]
+                            updated[idx].bank = e.target.value
+                            setGifts(updated)
+                          }}
+                          className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                         />
                       </div>
-
                       <div>
-                        <label className="block text-[8px] uppercase tracking-wider text-stone-400 mb-1">Nomor Rekening</label>
-                        <input 
-                          type="text" 
-                          placeholder="contoh: 12345678" 
+                        <label className="block text-[9px] text-stone-400 mb-1">NOMOR REKENING</label>
+                        <input
+                          type="text"
+                          placeholder="123456789"
                           value={gift.number}
-                          onChange={e => handleGiftChange(idx, 'number', e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-xs text-stone-800 font-mono"
+                          onChange={e => {
+                            const updated = [...gifts]
+                            updated[idx].number = e.target.value
+                            setGifts(updated)
+                          }}
+                          className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs font-mono"
                         />
                       </div>
-
                       <div>
-                        <label className="block text-[8px] uppercase tracking-wider text-stone-400 mb-1">Nama Pemilik Rekening</label>
-                        <input 
-                          type="text" 
-                          placeholder="contoh: Bimantara" 
+                        <label className="block text-[9px] text-stone-400 mb-1">ATAS NAMA</label>
+                        <input
+                          type="text"
+                          placeholder="Nama pemilik..."
                           value={gift.name}
-                          onChange={e => handleGiftChange(idx, 'name', e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-xs text-jawa-cream"
+                          onChange={e => {
+                            const updated = [...gifts]
+                            updated[idx].name = e.target.value
+                            setGifts(updated)
+                          }}
+                          className="w-full px-3 py-1.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
                         />
                       </div>
-
                       <button
                         type="button"
-                        onClick={() => handleRemoveGiftField(idx)}
-                        className="py-2.5 bg-red-950/20 border border-red-950/40 hover:bg-red-950 hover:border-red-900 text-red-400 font-body text-[9px] tracking-wider uppercase font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        onClick={() => setGifts(gifts.filter((_, i) => i !== idx))}
+                        className="py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded border border-red-200 flex items-center justify-center cursor-pointer"
                       >
-                        <IoTrashOutline /> Hapus
+                        <IoTrashOutline className="text-base" /> Hapus
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* MUSIC CONFIG */}
+              {/* BACKGROUND MUSIC */}
               <div>
-                <h3 className="font-heading text-sm text-amber-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">6. Lagu Latar Belakang</h3>
-                <div className="flex flex-col gap-3">
+                <h3 className="font-heading text-xs text-emerald-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">6. Musik Latar Belakang (MP3)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Unggah Musik dari Perangkat (Format MP3)</label>
-                    <input 
-                      type="file" 
+                    <label className="block text-[10px] text-stone-500 mb-1 font-semibold font-body">UNGGAH FILE MP3</label>
+                    <input
+                      type="file"
                       accept="audio/mp3,audio/mpeg"
                       onChange={handleMusicUpload}
-                      className="w-full text-[10px] text-jawa-cream file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9.5px] file:font-semibold file:bg-jawa-gold file:text-black hover:file:bg-jawa-gold-dark file:cursor-pointer"
+                      className="w-full text-xs"
                     />
                   </div>
-                  
                   <div>
-                    <label className="block text-[9px] uppercase tracking-wider text-stone-500 mb-1">Atau Tautan URL File Musik (MP3)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Masukkan URL file MP3 musik latar belakang" 
-                      value={musicUrl.startsWith('data:audio') ? '[Musik Terunggah Dari Perangkat]' : musicUrl}
+                    <label className="block text-[10px] text-stone-500 mb-1 font-semibold font-body">URL FILE MUSIC</label>
+                    <input
+                      type="text"
+                      placeholder="/music/jawa.mp3"
+                      value={musicUrl.startsWith('data:audio') ? '[Musik Terunggah]' : musicUrl}
                       onChange={e => setMusicUrl(e.target.value)}
                       disabled={musicUrl.startsWith('data:audio')}
-                      className="w-full px-3 py-2 bg-black border border-jawa-gold/15 focus:border-jawa-gold outline-none rounded-lg text-[10px] text-jawa-cream/80 font-mono disabled:opacity-50"
-                      required
+                      className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs font-mono"
                     />
                     {musicUrl.startsWith('data:audio') && (
                       <button
                         type="button"
                         onClick={() => setMusicUrl('/music/jawa.mp3')}
-                        className="text-[9px] text-red-400 hover:text-red-500 font-semibold tracking-wider uppercase mt-1 cursor-pointer"
+                        className="text-[10px] text-red-500 hover:underline mt-1 font-semibold cursor-pointer"
                       >
                         Reset ke Musik Default
                       </button>
@@ -938,81 +1604,469 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* PHOTO GALLERY CONFIG */}
+              {/* ALBUM PHOTO GALLERY */}
               <div>
-                <h3 className="font-heading text-sm text-amber-600 tracking-wide border-b border-stone-200 pb-1.5 mb-4 uppercase">7. Galeri Foto Prewedding (Maksimal 6 Foto)</h3>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
-                    <span className="text-[10px] text-jawa-cream/60">Unggah foto album prewedding dari perangkat ({gallery.length}/6 foto)</span>
-                    {gallery.length < 6 && (
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        multiple
-                        onChange={handleGalleryUpload}
-                        className="text-[10px] text-jawa-cream file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9.5px] file:font-semibold file:bg-jawa-gold file:text-black hover:file:bg-jawa-gold-dark file:cursor-pointer"
-                      />
-                    )}
-                  </div>
-                  
-                  {/* Photo Grid Preview */}
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                    {gallery.map((img, idx) => (
-                      <div key={idx} className="relative rounded-xl overflow-hidden aspect-square border border-jawa-gold/20 group bg-black">
-                        <img src={img} className="w-full h-full object-cover" alt={`Gallery Preview ${idx + 1}`} />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveGalleryImage(idx)}
-                          className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-red-400 font-semibold hover:text-red-500 cursor-pointer gap-1"
-                        >
-                          <IoTrashOutline className="text-lg" />
-                          <span className="text-[7.5px] tracking-wider uppercase">Hapus</span>
-                        </button>
-                      </div>
-                    ))}
-                    {Array.from({ length: Math.max(0, 6 - gallery.length) }).map((_, idx) => (
-                      <div key={idx} className="rounded-xl border-2 border-dashed border-jawa-gold/10 aspect-square flex flex-col items-center justify-center text-jawa-gold/15 text-[8.5px] uppercase tracking-widest font-semibold font-body bg-black/10 select-none">
-                        Kosong
-                      </div>
-                    ))}
-                  </div>
+                <div className="flex justify-between items-center border-b border-stone-200 pb-1.5 mb-4">
+                  <h3 className="font-heading text-xs text-emerald-600 tracking-wide uppercase font-body">7. Galeri Foto Album ({gallery.length}/6 foto)</h3>
+                  {gallery.length < 6 && (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleGalleryUpload}
+                      className="text-[10px] file:py-1 file:px-2.5 file:border-0 file:bg-emerald-50 file:text-emerald-700 file:rounded file:font-semibold hover:file:bg-emerald-100 cursor-pointer"
+                    />
+                  )}
+                </div>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                  {gallery.map((img, idx) => (
+                    <div key={idx} className="relative rounded-lg overflow-hidden aspect-square border border-stone-200 group bg-stone-100">
+                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveGalleryImage(idx)}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-red-400 font-semibold text-xs hover:text-red-500 cursor-pointer gap-1"
+                      >
+                        <IoTrashOutline className="text-lg" />
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                  {Array.from({ length: 6 - gallery.length }).map((_, i) => (
+                    <div key={i} className="rounded-lg border border-dashed border-stone-200 bg-slate-50/50 aspect-square flex items-center justify-center text-[10px] text-stone-300 font-medium select-none uppercase tracking-widest">
+                      Kosong
+                    </div>
+                  ))}
                 </div>
               </div>
-
             </form>
 
-            {/* Modal Footer Controls */}
-            <div className="border-t border-stone-200 p-5 bg-amber-50 flex justify-end gap-3">
-              <button 
+            {/* Footer */}
+            <div className="border-t border-stone-200 p-5 bg-emerald-50 flex justify-end gap-3 shrink-0">
+              <button
                 type="button"
-                onClick={() => setShowModal(false)}
-                className="px-6 py-3 border border-stone-200 text-stone-500 hover:bg-stone-100 font-body text-xs font-semibold tracking-wider uppercase rounded-lg transition-colors cursor-pointer"
+                onClick={() => setShowInvitationModal(false)}
+                className="px-5 py-2.5 bg-white hover:bg-stone-50 border border-stone-200 text-stone-600 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
               >
                 Batal
               </button>
-              
-              <button 
+              <button
                 type="submit"
                 form="invitation-form"
-                className="px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white font-body text-xs font-bold tracking-wider uppercase rounded-lg transition-colors active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <IoSaveOutline className="text-sm" /> Simpan Undangan
               </button>
             </div>
+          </div>
+        </div>
+      )}
 
+      {/* ==================================================== */}
+      {/* MODAL 2: PRODUCT CRUD FORM */}
+      {/* ==================================================== */}
+      {showProductModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-stone-200 rounded-lg w-full max-w-lg relative flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="border-b border-stone-200 p-4 flex justify-between items-center bg-emerald-50 shrink-0">
+              <h2 className="font-heading text-sm text-emerald-900 font-bold">
+                {editingProduct ? 'Edit Informasi Produk' : 'Tambah Produk Baru'}
+              </h2>
+              <button onClick={() => setShowProductModal(false)} className="text-lg text-stone-400 hover:text-stone-700 cursor-pointer">
+                <IoCloseOutline />
+              </button>
+            </div>
+
+            <form onSubmit={handleProductFormSubmit} className="p-5 overflow-y-auto flex-grow flex flex-col gap-4 no-scrollbar">
+              {/* Product Thumbnail Uploader with Drag-to-Crop */}
+              <div className="border border-stone-100 p-4 rounded-lg bg-slate-50/50 flex flex-col gap-3">
+                <label className="block text-xs text-stone-500 font-semibold uppercase">Thumbnail Produk / Template</label>
+                
+                {rawProductImage ? (
+                  /* Cropper Viewport */
+                  <div className="flex flex-col gap-3">
+                    <div 
+                      ref={cropperContainerRef}
+                      className="relative w-full max-w-[400px] aspect-[16/10] mx-auto bg-slate-900 border border-stone-300 rounded-lg overflow-hidden cursor-move select-none"
+                      onMouseDown={(e) => handleDragStart(e.clientX, e.clientY)}
+                      onMouseMove={(e) => handleDragMove(e.clientX, e.clientY)}
+                      onMouseUp={handleDragEnd}
+                      onMouseLeave={handleDragEnd}
+                      onTouchStart={(e) => {
+                        if (e.touches[0]) handleDragStart(e.touches[0].clientX, e.touches[0].clientY)
+                      }}
+                      onTouchMove={(e) => {
+                        if (e.touches[0]) handleDragMove(e.touches[0].clientX, e.touches[0].clientY)
+                      }}
+                      onTouchEnd={handleDragEnd}
+                    >
+                      {/* Guides / Crop Overlay */}
+                      <div className="absolute inset-0 border-2 border-dashed border-white/40 pointer-events-none z-10 m-3" />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <span className="text-[10px] bg-black/60 text-white py-1 px-2.5 rounded font-medium">Seret untuk Geser Gambar</span>
+                      </div>
+
+                      <img
+                        src={rawProductImage}
+                        alt="Raw preview"
+                        onLoad={handleImageLoad}
+                        draggable={false}
+                        className="max-w-none origin-center pointer-events-none absolute"
+                        style={{
+                          width: imageBaseDims ? `${imageBaseDims.w}px` : 'auto',
+                          height: imageBaseDims ? `${imageBaseDims.h}px` : 'auto',
+                          left: '50%',
+                          top: '50%',
+                          transform: `translate(calc(-50% + ${cropX}px), calc(-50% + ${cropY}px)) scale(${cropScale})`,
+                          transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-stone-400 font-semibold font-body">ZOOM:</span>
+                      <input 
+                        type="range"
+                        min="1"
+                        max="3.5"
+                        step="0.05"
+                        value={cropScale}
+                        onChange={(e) => setCropScale(Number(e.target.value))}
+                        className="flex-grow h-1 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                      />
+                      <span className="text-xs font-mono font-bold text-stone-600">{Math.round(cropScale * 100)}%</span>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRawProductImage(null)
+                          setImageBaseDims(null)
+                          setCropScale(1)
+                          setCropX(0)
+                          setCropY(0)
+                        }}
+                        className="px-3 py-1.5 border border-stone-200 text-stone-600 rounded-lg text-xs hover:bg-stone-100 font-semibold cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCropProductImage}
+                        className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 cursor-pointer"
+                      >
+                        Potong & Simpan
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Thumbnail Preview & Upload Triggers */
+                  <div className="flex items-center gap-4">
+                    {pThumbnail ? (
+                      <div className="relative w-28 h-18 rounded-lg overflow-hidden border border-stone-200 bg-slate-900 group">
+                        <img src={pThumbnail} className="w-full h-full object-cover" alt="Thumbnail Preview" />
+                        <button
+                          type="button"
+                          onClick={() => setPThumbnail('')}
+                          className="absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-28 h-18 rounded-lg border border-dashed border-stone-300 bg-white flex flex-col items-center justify-center text-[10px] text-stone-400 font-medium select-none uppercase tracking-widest">
+                        Kosong
+                      </div>
+                    )}
+                    
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onloadend = () => {
+                              setRawProductImage(reader.result as string)
+                              setCropScale(1)
+                              setCropX(0)
+                              setCropY(0)
+                            }
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                        className="text-xs file:py-1 file:px-2.5 file:border-0 file:bg-emerald-50 file:text-emerald-700 file:rounded file:font-semibold hover:file:bg-emerald-100 cursor-pointer"
+                      />
+                      <span className="text-[9px] text-stone-400 font-medium leading-normal">Unggah gambar rekomendasi rasio landscape 16:10.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Nama Template / Produk</label>
+                <input
+                  type="text"
+                  value={pName}
+                  onChange={e => setPName(e.target.value)}
+                  placeholder="Contoh: Adat Jawa Premium - Megah"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Kategori</label>
+                  <select
+                    value={pCategory}
+                    onChange={e => setPCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  >
+                    <option value="Adat Jawa">Adat Jawa</option>
+                    <option value="Modern">Modern</option>
+                    <option value="Islami">Islami</option>
+                    <option value="Sunda">Sunda</option>
+                    <option value="Bali">Bali</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Label Badge (Opsional)</label>
+                  <input
+                    type="text"
+                    value={pBadge}
+                    onChange={e => setPBadge(e.target.value)}
+                    placeholder="Contoh: Terlaris / Promo"
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Harga Jual (Rp)</label>
+                  <input
+                    type="number"
+                    value={pPrice}
+                    onChange={e => setPPrice(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Harga Coret (Rp)</label>
+                  <input
+                    type="number"
+                    value={pOriginalPrice}
+                    onChange={e => setPOriginalPrice(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Tautan URL Preview</label>
+                  <input
+                    type="text"
+                    value={pPreviewSlug}
+                    onChange={e => setPPreviewSlug(e.target.value)}
+                    placeholder="Contoh: bimantara-clara"
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Ketersediaan Produk</label>
+                  <select
+                    value={pAvailable ? 'tersedia' : 'tidak'}
+                    onChange={e => setPAvailable(e.target.value === 'tersedia')}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  >
+                    <option value="tersedia">Tersedia</option>
+                    <option value="tidak">Segera Hadir / Kosong</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Deskripsi Singkat</label>
+                <textarea
+                  rows={3}
+                  value={pDesc}
+                  onChange={e => setPDesc(e.target.value)}
+                  placeholder="Tuliskan deskripsi singkat mengenai desain template..."
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs resize-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Fitur Utama (Pisahkan dengan tanda Koma)</label>
+                <input
+                  type="text"
+                  value={pFeatures}
+                  onChange={e => setPFeatures(e.target.value)}
+                  placeholder="Countdown, Galeri Foto, Google Maps, RSVP, Backsound"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowProductModal(false)}
+                  className="px-4 py-2 border border-stone-200 text-stone-600 text-xs font-semibold rounded-lg hover:bg-stone-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  Simpan Produk
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 3: ORDER CRUD FORM */}
+      {/* ==================================================== */}
+      {showOrderModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-stone-200 rounded-lg w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="border-b border-stone-200 p-4 flex justify-between items-center bg-emerald-50 shrink-0">
+              <h2 className="font-heading text-sm text-emerald-900 font-bold">
+                {editingOrder ? 'Update Status Pesanan' : 'Tambah Pesanan Baru'}
+              </h2>
+              <button onClick={() => setShowOrderModal(false)} className="text-lg text-stone-400 hover:text-stone-700 cursor-pointer">
+                <IoCloseOutline />
+              </button>
+            </div>
+
+            <form onSubmit={handleOrderFormSubmit} className="p-5 overflow-y-auto flex-grow flex flex-col gap-4 no-scrollbar">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">ID Pesanan</label>
+                  <input
+                    type="text"
+                    value={oId}
+                    onChange={e => setOId(e.target.value)}
+                    className="w-full px-3 py-2 border border-stone-200 bg-stone-50 outline-none rounded-lg text-xs font-mono font-bold text-stone-600"
+                    disabled
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Tanggal Pesan</label>
+                  <input
+                    type="date"
+                    value={oOrderDate}
+                    onChange={e => setOOrderDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Nama Klien / Pelanggan</label>
+                <input
+                  type="text"
+                  value={oCustomerName}
+                  onChange={e => setOCustomerName(e.target.value)}
+                  placeholder="Masukkan nama lengkap klien"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Nomor WhatsApp Pelanggan</label>
+                <input
+                  type="text"
+                  value={oCustomerPhone}
+                  onChange={e => setOCustomerPhone(e.target.value)}
+                  placeholder="Contoh: 081234567890"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-mono"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Pilih Desain Template</label>
+                <select
+                  value={oProductName}
+                  onChange={e => setOProductName(e.target.value)}
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                >
+                  {products.map(p => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Total Harga (Rp)</label>
+                  <input
+                    type="number"
+                    value={oTotalPrice}
+                    onChange={e => setOTotalPrice(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-mono"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Status Transaksi</label>
+                  <select
+                    value={oStatus}
+                    onChange={e => setOStatus(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  >
+                    <option value="Menunggu Pembayaran">Menunggu Pembayaran</option>
+                    <option value="Diproses">Diproses</option>
+                    <option value="Selesai">Selesai</option>
+                    <option value="Dibatalkan">Dibatalkan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowOrderModal(false)}
+                  className="px-4 py-2 border border-stone-200 text-stone-600 text-xs font-semibold rounded-lg hover:bg-stone-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  Simpan Pesanan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Global Toast */}
-      <div 
-        className={`fixed left-1/2 -translate-x-1/2 z-[100] bg-stone-800 rounded-lg py-3 px-6 flex items-center justify-center gap-2.5 w-[88%] max-w-[320px] transition-all duration-500 ease-out text-center ${
-          showToast ? 'bottom-12 opacity-100 scale-100' : 'bottom-6 opacity-0 scale-95 pointer-events-none'
+      <div
+        className={`fixed left-1/2 -translate-x-1/2 z-[100] bg-stone-900 text-white rounded-lg py-2.5 px-6 flex items-center justify-center gap-2 max-w-xs transition-all duration-300 ${
+          showToast ? 'bottom-10 opacity-100' : 'bottom-0 opacity-0 pointer-events-none'
         }`}
       >
-        <span className="font-body text-[10.5px] font-semibold text-amber-400 tracking-wide">
-          {toastMsg}
-        </span>
+        <IoCheckmarkCircleOutline className="text-emerald-500 text-base" />
+        <span className="text-xs font-semibold">{toastMsg}</span>
       </div>
 
     </div>
