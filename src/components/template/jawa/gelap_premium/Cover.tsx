@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import type { WeddingData } from '../utils/dummyData'
-import { formatIndonesianDate } from '../utils/dateFormatter'
+import type { WeddingData } from '../../../../utils/dummyData'
+import { formatIndonesianDate } from '../../../../utils/dateFormatter'
 
 interface CoverProps {
   guestName?: string

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { IoCalendarOutline } from 'react-icons/io5'
-import type { WeddingData } from '../utils/dummyData'
-import { defaultWeddingData } from '../utils/dummyData'
-import { formatIndonesianDate, getCalendarDates } from '../utils/dateFormatter'
+import type { WeddingData } from '../../../../utils/dummyData'
+import { defaultWeddingData } from '../../../../utils/dummyData'
+import { formatIndonesianDate, getCalendarDates } from '../../../../utils/dateFormatter'
 
 interface HomePageProps {
   isDesktopMode?: boolean

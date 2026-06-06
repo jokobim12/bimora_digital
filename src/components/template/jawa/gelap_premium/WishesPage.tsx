@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { IoSendOutline, IoCopyOutline, IoCheckmarkOutline } from 'react-icons/io5'
-import type { WeddingData } from '../utils/dummyData'
-import { defaultWeddingData } from '../utils/dummyData'
+import type { WeddingData } from '../../../../utils/dummyData'
+import { defaultWeddingData } from '../../../../utils/dummyData'
 
 interface Wish {
   name: string

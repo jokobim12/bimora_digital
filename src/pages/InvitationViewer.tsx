@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { IoChevronBackOutline, IoWarningOutline } from 'react-icons/io5'
 import type { WeddingData } from '../utils/dummyData'
 import { getLocalInvitationBySlug } from '../utils/dummyData'
-import InvitationTemplate from '../components/InvitationTemplate'
+import InvitationTemplate from '../components/template/jawa/gelap_premium/InvitationTemplate'
 
 export default function InvitationViewer() {
   const { slug } = useParams<{ slug: string }>()

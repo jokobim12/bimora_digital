@@ -1,5 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import BerandaPage from './pages/BerandaPage'
+import ProdukPage from './pages/ProdukPage'
+import PortofolioPage from './pages/PortofolioPage'
+import TentangPage from './pages/TentangPage'
 import AdminDashboard from './pages/AdminDashboard'
 import InvitationViewer from './pages/InvitationViewer'
 
@@ -7,9 +10,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<BerandaPage />} />
+        <Route path="/produk" element={<ProdukPage />} />
+        <Route path="/portofolio" element={<PortofolioPage />} />
+        <Route path="/tentang" element={<TentangPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/undangan/:slug" element={<InvitationViewer />} />
+        {/* Redirect old paths */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { IoImagesOutline, IoCloseOutline } from 'react-icons/io5'
-import type { WeddingData } from '../utils/dummyData'
-import { defaultWeddingData } from '../utils/dummyData'
+import type { WeddingData } from '../../../../utils/dummyData'
+import { defaultWeddingData } from '../../../../utils/dummyData'
 
 interface GalleryPageProps {
   isDesktopMode?: boolean

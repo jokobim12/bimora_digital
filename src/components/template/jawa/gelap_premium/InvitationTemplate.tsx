@@ -9,7 +9,7 @@ import EventPage from './EventPage'
 import GalleryPage from './GalleryPage'
 import WishesPage from './WishesPage'
 import SectionGate from './SectionGate'
-import type { WeddingData } from '../utils/dummyData'
+import type { WeddingData } from '../../../../utils/dummyData'
 
 interface InvitationTemplateProps {
   data: WeddingData

@@ -19,16 +19,22 @@
 
 html {
   scroll-behavior: smooth;
-  background-color: #030303;
+  background-color: #ffffff;
   overflow-x: hidden;
 }
 
 body {
   font-family: var(--font-body);
-  background-color: #030303;
-  color: var(--cream);
+  background-color: #ffffff;
+  color: #1c1917;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+/* Dark background override for invitation template pages */
+.invitation-dark {
+  background-color: #030303;
+  color: var(--cream);
 }
 
 /* Custom Scrollbar for Mobile Frame and Body */

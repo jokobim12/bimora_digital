@@ -1,7 +1,7 @@
 import { IoTimeOutline, IoLocationOutline, IoNavigateOutline } from 'react-icons/io5'
-import type { WeddingData } from '../utils/dummyData'
-import { defaultWeddingData } from '../utils/dummyData'
-import { formatIndonesianDate } from '../utils/dateFormatter'
+import type { WeddingData } from '../../../../utils/dummyData'
+import { defaultWeddingData } from '../../../../utils/dummyData'
+import { formatIndonesianDate } from '../../../../utils/dateFormatter'
 
 interface EventPageProps {
   isDesktopMode?: boolean
