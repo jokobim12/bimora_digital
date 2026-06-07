@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { IoSendOutline, IoCopyOutline, IoCheckmarkOutline } from 'react-icons/io5'
 import type { WeddingData } from '../../../../utils/dummyData'
 import { defaultWeddingData } from '../../../../utils/dummyData'
+import { supabase } from '../../../../utils/supabaseClient'
 
 interface Wish {
   name: string
@@ -25,43 +26,92 @@ export default function WishesPage({ showToast, isDesktopMode = false, data = de
   const [sending, setSending] = useState(false)
 
   const activeGifts = data.gifts && data.gifts.length > 0 ? data.gifts : defaultWeddingData.gifts
-  const wishesStorageKey = `wedding-wishes-${data.slug}`
 
   useEffect(() => {
-    const saved = localStorage.getItem(wishesStorageKey)
-    if (saved) {
-      setWishes(JSON.parse(saved))
-    } else {
-      const initial = [
-        { name: 'Keluarga Raden Mas Haryo', text: `Selamat menempuh hidup baru ${data.groom_nickname} & ${data.bride_nickname}. Semoga senantiasa diberikan kelancaran sampai hari H dan menjadi keluarga yang sakinah mawaddah warahmah.`, attendance: 'hadir', time: '1/6/2026 08:12' },
-        { name: 'Anissa & Rian', text: 'Barakallahulakum wa baraka alaikum wa jamaa bainakuma fii khoir. Selamat ya guys! Akhirnya pelaminan juga.', attendance: 'hadir', time: '1/6/2026 07:45' }
-      ]
-      setWishes(initial)
-      localStorage.setItem(wishesStorageKey, JSON.stringify(initial))
-    }
-  }, [wishesStorageKey])
+    // 1. Fetch existing wishes from Supabase
+    async function fetchWishes() {
+      try {
+        const { data: wishesData, error } = await supabase
+          .from('wishes')
+          .select('name, text, attendance, time')
+          .eq('invitation_slug', data.slug)
+          .order('created_at', { ascending: false })
 
-  const handleSubmit = (e: React.FormEvent) => {
+        if (error) {
+          console.error('Error loading wishes:', error.message)
+        } else if (wishesData && wishesData.length > 0) {
+          setWishes(wishesData as Wish[])
+        } else {
+          // Fallback initial state if no database entries yet
+          setWishes([
+            { name: 'Keluarga Raden Mas Haryo', text: `Selamat menempuh hidup baru ${data.groom_nickname} & ${data.bride_nickname}. Semoga senantiasa diberikan kelancaran sampai hari H dan menjadi keluarga yang sakinah mawaddah warahmah.`, attendance: 'hadir', time: '1/6/2026 08:12' },
+            { name: 'Anissa & Rian', text: 'Barakallahulakum wa baraka alaikum wa jamaa bainakuma fii khoir. Selamat ya guys! Akhirnya pelaminan juga.', attendance: 'hadir', time: '1/6/2026 07:45' }
+          ])
+        }
+      } catch (err) {
+        console.error('Exception fetching wishes:', err)
+      }
+    }
+
+    fetchWishes()
+
+    // 2. Subscribe to real-time additions of new wishes
+    const channel = supabase
+      .channel(`wishes-realtime-${data.slug}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'wishes', filter: `invitation_slug=eq.${data.slug}` },
+        (payload) => {
+          const newWish: Wish = {
+            name: payload.new.name,
+            text: payload.new.text,
+            attendance: payload.new.attendance,
+            time: payload.new.time
+          }
+          setWishes((prev) => [newWish, ...prev])
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [data.slug, data.groom_nickname, data.bride_nickname])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !text.trim()) return
     setSending(true)
     
-    setTimeout(() => {
-      const newWish: Wish = {
-        name: name.trim(),
-        text: text.trim(),
-        attendance,
-        time: new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+    try {
+      const formattedTime = new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      const { error } = await supabase
+        .from('wishes')
+        .insert([
+          {
+            invitation_slug: data.slug,
+            name: name.trim(),
+            text: text.trim(),
+            attendance,
+            time: formattedTime
+          }
+        ])
+
+      if (error) {
+        console.error('Error inserting wish:', error.message)
+        showToast('Gagal mengirim ucapan, silakan coba lagi.')
+      } else {
+        setName('')
+        setText('')
+        setAttendance('hadir')
+        showToast('Ucapan terkirim! Terima kasih banyak 🤍')
       }
-      const updated = [newWish, ...wishes]
-      setWishes(updated)
-      localStorage.setItem(wishesStorageKey, JSON.stringify(updated))
-      setName('')
-      setText('')
-      setAttendance('hadir')
+    } catch (err) {
+      console.error('Submission failed:', err)
+      showToast('Gagal mengirim ucapan. Masalah koneksi.')
+    } finally {
       setSending(false)
-      showToast('Ucapan terkirim! Terima kasih banyak 🤍')
-    }, 800)
+    }
   }
 
   const copyNumber = (num: string, idx: number) => {

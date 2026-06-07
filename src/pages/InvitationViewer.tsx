@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { IoChevronBackOutline, IoWarningOutline } from 'react-icons/io5'
 import type { WeddingData } from '../utils/dummyData'
-import { getLocalInvitationBySlug } from '../utils/dummyData'
+import { supabase } from '../utils/supabaseClient'
 import InvitationTemplateGelap from '../components/template/jawa/gelap_premium/InvitationTemplate'
 import InvitationTemplateCerah from '../components/template/jawa/cerah_premium/InvitationTemplate'
 
@@ -12,11 +12,31 @@ export default function InvitationViewer() {
   const [weddingData, setWeddingData] = useState<WeddingData | null>(null)
 
   useEffect(() => {
-    if (slug) {
-      const data = getLocalInvitationBySlug(slug)
-      setWeddingData(data || null)
+    async function fetchInvitation() {
+      if (!slug) {
+        setLoading(false)
+        return
+      }
+      try {
+        const { data, error } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('slug', slug)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Error fetching invitation from Supabase:', error.message)
+        } else if (data) {
+          setWeddingData(data as WeddingData)
+        }
+      } catch (err) {
+        console.error('Failed to fetch invitation:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
+    
+    fetchInvitation()
   }, [slug])
 
   if (loading) {
