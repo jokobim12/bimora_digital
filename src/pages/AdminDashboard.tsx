@@ -2127,13 +2127,16 @@ export default function AdminDashboard() {
                       disabled={musicUrl.startsWith('data:audio')}
                       className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs font-mono"
                     />
+                    <p className="text-[9px] text-stone-400 mt-1 font-body leading-relaxed">
+                      *Gunakan URL file audio mentah (diakhiri .mp3). Tautan halaman web/YouTube tidak didukung.
+                    </p>
                     {musicUrl.startsWith('data:audio') && (
                       <button
                         type="button"
                         onClick={() => setMusicUrl('/music/jawa.mp3')}
                         className="text-[10px] text-red-500 hover:underline mt-1 font-semibold cursor-pointer"
                       >
-                        Reset ke Musik Default
+                        Hapus Musik Unggahan
                       </button>
                     )}
                   </div>
