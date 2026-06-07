@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IoSearchOutline, IoCloseOutline, IoCheckmarkCircle, IoChevronBackOutline,
@@ -6,15 +6,56 @@ import {
 } from 'react-icons/io5'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { getLocalProducts, getLocalAppSettings } from '../utils/dummyData'
+import { type ProductData, getLocalAppSettings } from '../utils/dummyData'
+import { supabase } from '../utils/supabaseClient'
 
 const categories = ['Semua', 'Adat Jawa', 'Modern', 'Islami', 'Sunda']
 
 export default function ProdukPage() {
-  const [products] = useState(() => getLocalProducts())
+  const [products, setProducts] = useState<ProductData[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('Semua')
   const settings = getLocalAppSettings()
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('id', { ascending: true })
+
+        if (error) {
+          console.error('Error fetching products:', error.message)
+        } else if (data) {
+          const mapped: ProductData[] = data.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            originalPrice: p.original_price,
+            rating: Number(p.rating),
+            reviews: p.reviews,
+            badge: p.badge,
+            desc: p.desc,
+            features: p.features,
+            previewSlug: p.preview_slug,
+            available: p.available,
+            color: p.color,
+            thumbnail: p.thumbnail
+          }))
+          setProducts(mapped)
+        }
+      } catch (err) {
+        console.error('Failed to load products:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   const waMessage = (name: string) =>
     encodeURIComponent(`Halo Bimora Digital! Saya tertarik untuk memesan template undangan digital *${name}*. Boleh konsultasi lebih lanjut?`)
@@ -91,7 +132,11 @@ export default function ProdukPage() {
         </div>
 
         {/* Products Grid */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0F3A26]"></div>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20 bg-white border border-stone-200 rounded-lg p-6">
             <IoSearchOutline className="text-4xl text-stone-300 mx-auto mb-3" />
             <h3 className="text-base font-bold text-stone-850">Desain tidak ditemukan</h3>

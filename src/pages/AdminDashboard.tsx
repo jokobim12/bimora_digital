@@ -10,17 +10,11 @@ import {
   IoSettingsOutline, IoImagesOutline, IoLogoWhatsapp, IoListOutline
 } from 'react-icons/io5'
 import type { WeddingData, ProductData, OrderData, PortfolioData, OrderStepData } from '../utils/dummyData'
-import {
-  getLocalInvitations, addOrUpdateLocalInvitation, deleteLocalInvitation,
-  getLocalProducts, addOrUpdateLocalProduct, deleteLocalProduct,
-  getLocalOrders, addOrUpdateLocalOrder, deleteLocalOrder,
-  getLocalPortfolios, addOrUpdateLocalPortfolio, deleteLocalPortfolio,
-  getLocalAppSettings, saveLocalAppSettings,
-  getLocalOrderSteps, addOrUpdateLocalOrderStep, deleteLocalOrderStep
-} from '../utils/dummyData'
+import { supabase } from '../utils/supabaseClient'
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState(false)
   
@@ -87,7 +81,7 @@ export default function AdminDashboard() {
   // ----------------------------------------------------
   // PRODUCT FORM STATES
   // ----------------------------------------------------
-  const [pId, setPId] = useState<string | number>('')
+
   const [pName, setPName] = useState('')
   const [pCategory, setPCategory] = useState('Adat Jawa')
   const [pPrice, setPPrice] = useState(129000)
@@ -148,26 +142,116 @@ export default function AdminDashboard() {
 
   // Check auth on load
   useEffect(() => {
-    const session = sessionStorage.getItem('bimora_admin_auth')
-    if (session === 'true') {
-      setIsLoggedIn(true)
-      loadAllData()
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setIsLoggedIn(true)
+        loadAllData()
+      } else {
+        const localSession = sessionStorage.getItem('bimora_admin_auth')
+        if (localSession === 'true') {
+          setIsLoggedIn(true)
+          loadAllData()
+        }
+      }
     }
+    checkSession()
   }, [])
 
-  const loadAllData = () => {
-    setInvitations(getLocalInvitations())
-    setProducts(getLocalProducts())
-    setOrders(getLocalOrders())
-    setPortfolios(getLocalPortfolios())
-    setOrderSteps(getLocalOrderSteps())
+  const loadAllData = async () => {
+    try {
+      // 1. Fetch invitations
+      const { data: invites } = await supabase
+        .from('invitations')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (invites) {
+        setInvitations(invites as WeddingData[])
+      }
 
-    // Load App Settings
-    const s = getLocalAppSettings()
-    setSetWaNumber(s.waNumber)
-    setSetInstagram(s.instagram)
-    setSetServiceHours(s.serviceHours)
-    setSetWaMsg(s.waMessageDefault)
+      // 2. Fetch products
+      const { data: prods } = await supabase
+        .from('products')
+        .select('*')
+        .order('id', { ascending: true })
+      if (prods) {
+        const mappedProds: ProductData[] = prods.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          originalPrice: p.original_price,
+          rating: Number(p.rating),
+          reviews: p.reviews,
+          badge: p.badge,
+          desc: p.desc,
+          features: p.features,
+          previewSlug: p.preview_slug,
+          available: p.available,
+          color: p.color,
+          thumbnail: p.thumbnail
+        }))
+        setProducts(mappedProds)
+      }
+
+      // 3. Fetch orders
+      const { data: ords } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (ords) {
+        const mappedOrds: OrderData[] = ords.map((o: any) => ({
+          id: o.id,
+          customerName: o.customer_name,
+          customerPhone: o.customer_phone,
+          productName: o.product_name,
+          orderDate: o.order_date,
+          status: o.status,
+          totalPrice: o.total_price
+        }))
+        setOrders(mappedOrds)
+      }
+
+      // 4. Fetch portfolios
+      const { data: ports } = await supabase
+        .from('portfolios')
+        .select('*')
+      if (ports) {
+        setPortfolios(ports as PortfolioData[])
+      }
+
+      // 5. Fetch order steps
+      const { data: stepsData } = await supabase
+        .from('order_steps')
+        .select('*')
+        .order('num', { ascending: true })
+      if (stepsData) {
+        const mappedSteps: OrderStepData[] = stepsData.map((s: any) => ({
+          id: s.id,
+          num: s.num,
+          title: s.title,
+          desc: s.desc,
+          iconType: s.icon_type,
+          actionText: s.action_text || undefined,
+          actionLink: s.action_link || undefined
+        }))
+        setOrderSteps(mappedSteps)
+      }
+
+      // 6. Fetch app settings
+      const { data: s } = await supabase
+        .from('app_settings')
+        .select('*')
+        .maybeSingle()
+      if (s) {
+        setSetWaNumber(s.wa_number)
+        setSetInstagram(s.instagram)
+        setSetServiceHours(s.service_hours)
+        setSetWaMsg(s.wa_message_default)
+      }
+    } catch (err) {
+      console.error('Failed to load dashboard data from Supabase:', err)
+    }
   }
 
   const triggerToast = (msg: string) => {
@@ -176,21 +260,32 @@ export default function AdminDashboard() {
     setTimeout(() => setShowToast(false), 3000)
   }
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password === 'admin') {
+    setLoginError(false)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password
+      })
+      if (error) throw error
       setIsLoggedIn(true)
-      setLoginError(false)
       sessionStorage.setItem('bimora_admin_auth', 'true')
-      loadAllData()
+      await loadAllData()
       triggerToast('Selamat datang, Admin! 👋')
-    } else {
+    } catch (err: any) {
+      console.error('Login error:', err.message)
       setLoginError(true)
       setPassword('')
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('Logout error:', err)
+    }
     setIsLoggedIn(false)
     sessionStorage.removeItem('bimora_admin_auth')
   }
@@ -312,15 +407,25 @@ export default function AdminDashboard() {
     setShowInvitationModal(true)
   }
 
-  const handleDeleteInvitation = (slugToDelete: string) => {
+  const handleDeleteInvitation = async (slugToDelete: string) => {
     if (window.confirm(`Hapus undangan /undangan/${slugToDelete}?`)) {
-      deleteLocalInvitation(slugToDelete)
-      loadAllData()
-      triggerToast('Undangan berhasil dihapus!')
+      try {
+        const { error } = await supabase
+          .from('invitations')
+          .delete()
+          .eq('slug', slugToDelete)
+        
+        if (error) throw error
+        await loadAllData()
+        triggerToast('Undangan berhasil dihapus!')
+      } catch (err: any) {
+        console.error('Failed to delete invitation:', err.message)
+        alert('Gagal menghapus undangan: ' + err.message)
+      }
     }
   }
 
-  const handleInvitationFormSubmit = (e: React.FormEvent) => {
+  const handleInvitationFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!slug.trim()) return
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
@@ -333,8 +438,7 @@ export default function AdminDashboard() {
       }
     }
 
-    const payload: WeddingData = {
-      id: editingInvitation ? editingInvitation.id : (Math.random().toString(36).substring(2, 9) + Date.now().toString(36)),
+    const payload: any = {
       slug: cleanSlug,
       template_type: templateType,
       is_active: isInvitationActive,
@@ -360,14 +464,22 @@ export default function AdminDashboard() {
       stories: stories.filter(s => s.year.trim() && s.title.trim() && s.desc.trim())
     }
 
+    if (editingInvitation) {
+      payload.id = editingInvitation.id
+    }
+
     try {
-      addOrUpdateLocalInvitation(payload)
-      loadAllData()
+      const { error } = await supabase
+        .from('invitations')
+        .upsert(payload)
+
+      if (error) throw error
+      await loadAllData()
       setShowInvitationModal(false)
       triggerToast(editingInvitation ? 'Undangan diperbarui!' : 'Undangan baru ditambahkan!')
-    } catch (err) {
-      console.error('Local Storage Quota Exceeded:', err)
-      alert('Gagal menyimpan! Memori penyimpanan browser penuh (LocalStorage limit 5MB). Silakan gunakan URL musik eksternal atau bersihkan file musik/foto galeri Anda yang terlalu besar.')
+    } catch (err: any) {
+      console.error('Failed to save invitation to Supabase:', err)
+      alert('Gagal menyimpan undangan ke database: ' + err.message)
     }
   }
 
@@ -436,7 +548,6 @@ export default function AdminDashboard() {
 
   const handleCreateProduct = () => {
     setEditingProduct(null)
-    setPId(Date.now())
     setPName('')
     setPCategory('Adat Jawa')
     setPPrice(149000)
@@ -459,7 +570,6 @@ export default function AdminDashboard() {
 
   const handleEditProduct = (prod: ProductData) => {
     setEditingProduct(prod)
-    setPId(prod.id)
     setPName(prod.name)
     setPCategory(prod.category)
     setPPrice(prod.price)
@@ -480,42 +590,59 @@ export default function AdminDashboard() {
     setShowProductModal(true)
   }
 
-  const handleDeleteProduct = (id: string | number) => {
+  const handleDeleteProduct = async (id: string | number) => {
     if (window.confirm('Hapus produk ini?')) {
-      deleteLocalProduct(id)
-      loadAllData()
-      triggerToast('Produk berhasil dihapus!')
+      try {
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', id)
+
+        if (error) throw error
+        await loadAllData()
+        triggerToast('Produk berhasil dihapus!')
+      } catch (err: any) {
+        console.error('Failed to delete product:', err.message)
+        alert('Gagal menghapus produk: ' + err.message)
+      }
     }
   }
 
-  const handleProductFormSubmit = (e: React.FormEvent) => {
+  const handleProductFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!pName.trim()) return
 
-    const payload: ProductData = {
-      id: pId,
+    const payload: any = {
       name: pName.trim(),
       category: pCategory,
       price: Number(pPrice),
-      originalPrice: Number(pOriginalPrice),
+      original_price: Number(pOriginalPrice),
       rating: Number(pRating),
       reviews: Number(pReviews),
       badge: pBadge.trim(),
       desc: pDesc.trim(),
       features: pFeatures.split(',').map(f => f.trim()).filter(Boolean),
-      previewSlug: pPreviewSlug.trim() || null,
+      preview_slug: pPreviewSlug.trim() || null,
       available: pAvailable,
       thumbnail: pThumbnail
     }
 
+    if (editingProduct) {
+      payload.id = editingProduct.id
+    }
+
     try {
-      addOrUpdateLocalProduct(payload)
-      loadAllData()
+      const { error } = await supabase
+        .from('products')
+        .upsert(payload)
+
+      if (error) throw error
+      await loadAllData()
       setShowProductModal(false)
       triggerToast(editingProduct ? 'Produk diperbarui!' : 'Produk baru ditambahkan!')
-    } catch (err) {
-      console.error('Local Storage Quota Exceeded:', err)
-      alert('Gagal menyimpan produk! Memori penyimpanan browser penuh (LocalStorage limit 5MB). Coba gunakan resolusi gambar thumbnail yang lebih kecil.')
+    } catch (err: any) {
+      console.error('Failed to save product to Supabase:', err)
+      alert('Gagal menyimpan produk ke database: ' + err.message)
     }
   }
 
@@ -546,36 +673,50 @@ export default function AdminDashboard() {
     setShowOrderModal(true)
   }
 
-  const handleDeleteOrder = (id: string) => {
+  const handleDeleteOrder = async (id: string) => {
     if (window.confirm('Hapus data pesanan ini?')) {
-      deleteLocalOrder(id)
-      loadAllData()
-      triggerToast('Pesanan berhasil dihapus!')
+      try {
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .eq('id', id)
+
+        if (error) throw error
+        await loadAllData()
+        triggerToast('Pesanan berhasil dihapus!')
+      } catch (err: any) {
+        console.error('Failed to delete order:', err.message)
+        alert('Gagal menghapus pesanan: ' + err.message)
+      }
     }
   }
 
-  const handleOrderFormSubmit = (e: React.FormEvent) => {
+  const handleOrderFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!oCustomerName.trim()) return
 
-    const payload: OrderData = {
+    const payload = {
       id: oId,
-      customerName: oCustomerName.trim(),
-      customerPhone: oCustomerPhone.trim(),
-      productName: oProductName,
-      orderDate: oOrderDate,
+      customer_name: oCustomerName.trim(),
+      customer_phone: oCustomerPhone.trim(),
+      product_name: oProductName,
+      order_date: oOrderDate,
       status: oStatus,
-      totalPrice: Number(oTotalPrice)
+      total_price: Number(oTotalPrice)
     }
 
     try {
-      addOrUpdateLocalOrder(payload)
-      loadAllData()
+      const { error } = await supabase
+        .from('orders')
+        .upsert(payload)
+
+      if (error) throw error
+      await loadAllData()
       setShowOrderModal(false)
       triggerToast(editingOrder ? 'Pesanan diperbarui!' : 'Pesanan baru ditambahkan!')
-    } catch (err) {
-      console.error('Local Storage Quota Exceeded:', err)
-      alert('Gagal menyimpan pesanan! Memori penyimpanan browser penuh.')
+    } catch (err: any) {
+      console.error('Failed to save order to Supabase:', err)
+      alert('Gagal menyimpan pesanan ke database: ' + err.message)
     }
   }
 
@@ -602,12 +743,26 @@ export default function AdminDashboard() {
 
           <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
             <div>
+              <label className="block text-xs text-slate-500 mb-1.5 font-semibold">Email Admin</label>
+              <div className="relative flex items-center">
+                <input
+                  type="email"
+                  placeholder="admin@bimoradigital.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none rounded-lg text-xs text-slate-800 transition-all font-sans"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
               <label className="block text-xs text-slate-500 mb-1.5 font-semibold">Kata Sandi</label>
               <div className="relative flex items-center">
                 <IoLockClosedOutline className="absolute left-3.5 text-emerald-600 text-base pointer-events-none" />
                 <input
                   type="password"
-                  placeholder="Masukkan kata sandi (admin)"
+                  placeholder="Masukkan kata sandi"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none rounded-lg text-xs text-slate-800 transition-all font-sans"
@@ -618,7 +773,7 @@ export default function AdminDashboard() {
 
             {loginError && (
               <span className="text-[11px] text-red-500 font-semibold text-center bg-red-50 py-2 px-3 rounded-lg border border-red-100">
-                Sandi salah! Silakan coba lagi.
+                Email atau Sandi salah! Silakan coba lagi.
               </span>
             )}
 
@@ -1014,57 +1169,77 @@ export default function AdminDashboard() {
     setShowPortfolioModal(true)
   }
 
-  const handleDeletePortfolio = (id: string) => {
+  const handleDeletePortfolio = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus portofolio ini?')) {
-      deleteLocalPortfolio(id)
-      setPortfolios(getLocalPortfolios())
-      triggerToast('Portofolio berhasil dihapus')
+      try {
+        const { error } = await supabase
+          .from('portfolios')
+          .delete()
+          .eq('id', id)
+
+        if (error) throw error
+        await loadAllData()
+        triggerToast('Portofolio berhasil dihapus')
+      } catch (err: any) {
+        console.error('Failed to delete portfolio:', err.message)
+        alert('Gagal menghapus portofolio: ' + err.message)
+      }
     }
   }
 
-  const handlePortfolioFormSubmit = (e: React.FormEvent) => {
+  const handlePortfolioFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!portCouple.trim()) {
       alert('Nama Pasangan harus diisi!')
       return
     }
-    const pData: PortfolioData = {
+    const pData = {
       id: portId,
-      couple: portCouple,
+      couple: portCouple.trim(),
       template: portTemplate,
-      date: portDate,
+      date: portDate.trim(),
       slug: portSlug ? portSlug.trim() : null,
       category: portCategory
     }
     try {
-      addOrUpdateLocalPortfolio(pData)
-      setPortfolios(getLocalPortfolios())
+      const { error } = await supabase
+        .from('portfolios')
+        .upsert(pData)
+
+      if (error) throw error
+      await loadAllData()
       setShowPortfolioModal(false)
       triggerToast(editingPortfolio ? 'Portofolio berhasil diupdate' : 'Portofolio berhasil ditambahkan')
-    } catch (err) {
-      console.error('Local Storage Quota Exceeded:', err)
-      alert('Gagal menyimpan portofolio! Memori penyimpanan browser penuh.')
+    } catch (err: any) {
+      console.error('Failed to save portfolio to Supabase:', err)
+      alert('Gagal menyimpan portofolio: ' + err.message)
     }
   }
 
   // 2. Contacts / Global Settings Submit Handler
-  const handleSettingsFormSubmit = (e: React.FormEvent) => {
+  const handleSettingsFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!setWaNumber.trim() || !setInstagram.trim() || !setServiceHours.trim() || !setWaMsg.trim()) {
       alert('Semua bidang harus diisi!')
       return
     }
     try {
-      saveLocalAppSettings({
-        waNumber: setWaNumber.trim(),
-        instagram: setInstagram.trim(),
-        serviceHours: setServiceHours.trim(),
-        waMessageDefault: setWaMsg.trim()
-      })
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({
+          id: 1,
+          wa_number: setWaNumber.trim(),
+          instagram: setInstagram.trim(),
+          service_hours: setServiceHours.trim(),
+          wa_message_default: setWaMsg.trim()
+        })
+
+      if (error) throw error
+      await loadAllData()
       triggerToast('Pengaturan aplikasi berhasil disimpan')
-    } catch (err) {
-      console.error('Local Storage Quota Exceeded:', err)
-      alert('Gagal menyimpan pengaturan! Memori penyimpanan browser penuh.')
+    } catch (err: any) {
+      console.error('Failed to save app settings to Supabase:', err)
+      alert('Gagal menyimpan pengaturan: ' + err.message)
     }
   }
 
@@ -1094,37 +1269,51 @@ export default function AdminDashboard() {
     setShowStepModal(true)
   }
 
-  const handleDeleteStep = (id: string) => {
+  const handleDeleteStep = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus langkah ini?')) {
-      deleteLocalOrderStep(id)
-      setOrderSteps(getLocalOrderSteps())
-      triggerToast('Langkah berhasil dihapus')
+      try {
+        const { error } = await supabase
+          .from('order_steps')
+          .delete()
+          .eq('id', id)
+
+        if (error) throw error
+        await loadAllData()
+        triggerToast('Langkah berhasil dihapus')
+      } catch (err: any) {
+        console.error('Failed to delete step:', err.message)
+        alert('Gagal menghapus langkah: ' + err.message)
+      }
     }
   }
 
-  const handleStepFormSubmit = (e: React.FormEvent) => {
+  const handleStepFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!stepNum.trim() || !stepTitle.trim() || !stepDesc.trim()) {
       alert('Nomor, Judul, dan Keterangan harus diisi!')
       return
     }
-    const sData: OrderStepData = {
+    const sData = {
       id: stepId,
-      num: stepNum,
-      title: stepTitle,
-      desc: stepDesc,
-      iconType: stepIconType,
-      actionText: stepActionText.trim() || undefined,
-      actionLink: stepActionLink.trim() || undefined
+      num: stepNum.trim(),
+      title: stepTitle.trim(),
+      desc: stepDesc.trim(),
+      icon_type: stepIconType,
+      action_text: stepActionText.trim() || null,
+      action_link: stepActionLink.trim() || null
     }
     try {
-      addOrUpdateLocalOrderStep(sData)
-      setOrderSteps(getLocalOrderSteps())
+      const { error } = await supabase
+        .from('order_steps')
+        .upsert(sData)
+
+      if (error) throw error
+      await loadAllData()
       setShowStepModal(false)
       triggerToast(editingStep ? 'Langkah berhasil diupdate' : 'Langkah berhasil ditambahkan')
-    } catch (err) {
-      console.error('Local Storage Quota Exceeded:', err)
-      alert('Gagal menyimpan langkah! Memori penyimpanan browser penuh.')
+    } catch (err: any) {
+      console.error('Failed to save step to Supabase:', err)
+      alert('Gagal menyimpan langkah: ' + err.message)
     }
   }
 

@@ -1,3 +1,5 @@
+import { supabase } from './supabaseClient'
+
 export interface WeddingData {
   id: string
   slug: string
@@ -405,6 +407,29 @@ export const defaultAboutUs: AboutUsData = {
 }
 
 export function getLocalAboutUs(): AboutUsData {
+  const syncAboutUs = async () => {
+    try {
+      const { data } = await supabase.from('about_us').select('*').maybeSingle()
+      if (data) {
+        const synced: AboutUsData = {
+          title: data.title,
+          subtitle: data.subtitle,
+          descShort: data.desc_short,
+          storyTitle: data.story_title,
+          story1: data.story1,
+          story2: data.story2,
+          story3: data.story3,
+          values: data.values,
+          team: data.team
+        }
+        localStorage.setItem(ABOUT_KEY, JSON.stringify(synced))
+      }
+    } catch (err) {
+      console.error('Background about_us sync failed:', err)
+    }
+  }
+  syncAboutUs()
+
   const data = localStorage.getItem(ABOUT_KEY)
   if (!data) {
     localStorage.setItem(ABOUT_KEY, JSON.stringify(defaultAboutUs))
@@ -447,6 +472,26 @@ export const defaultPortfolios: PortfolioData[] = [
 ]
 
 export function getLocalPortfolios(): PortfolioData[] {
+  const syncPortfolios = async () => {
+    try {
+      const { data } = await supabase.from('portfolios').select('*')
+      if (data) {
+        const synced: PortfolioData[] = data.map((p: any) => ({
+          id: p.id,
+          couple: p.couple,
+          template: p.template,
+          date: p.date,
+          slug: p.slug || null,
+          category: p.category
+        }))
+        localStorage.setItem(PORTFOLIOS_KEY, JSON.stringify(synced))
+      }
+    } catch (err) {
+      console.error('Background portfolios sync failed:', err)
+    }
+  }
+  syncPortfolios()
+
   const data = localStorage.getItem(PORTFOLIOS_KEY)
   if (!data) {
     localStorage.setItem(PORTFOLIOS_KEY, JSON.stringify(defaultPortfolios))
@@ -498,6 +543,24 @@ export const defaultAppSettings: AppSettingsData = {
 }
 
 export function getLocalAppSettings(): AppSettingsData {
+  const syncSettings = async () => {
+    try {
+      const { data } = await supabase.from('app_settings').select('*').maybeSingle()
+      if (data) {
+        const synced: AppSettingsData = {
+          waNumber: data.wa_number,
+          instagram: data.instagram,
+          serviceHours: data.service_hours,
+          waMessageDefault: data.wa_message_default
+        }
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(synced))
+      }
+    } catch (err) {
+      console.error('Background settings sync failed:', err)
+    }
+  }
+  syncSettings()
+
   const data = localStorage.getItem(SETTINGS_KEY)
   if (!data) {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultAppSettings))
@@ -505,7 +568,6 @@ export function getLocalAppSettings(): AppSettingsData {
   }
   try {
     const parsed = JSON.parse(data)
-    // Make sure all fields are preset
     return { ...defaultAppSettings, ...parsed }
   } catch (e) {
     return defaultAppSettings
@@ -572,6 +634,27 @@ export const defaultOrderSteps: OrderStepData[] = [
 ]
 
 export function getLocalOrderSteps(): OrderStepData[] {
+  const syncOrderSteps = async () => {
+    try {
+      const { data } = await supabase.from('order_steps').select('*').order('num', { ascending: true })
+      if (data) {
+        const synced: OrderStepData[] = data.map((s: any) => ({
+          id: s.id,
+          num: s.num,
+          title: s.title,
+          desc: s.desc,
+          iconType: s.icon_type,
+          actionText: s.action_text || undefined,
+          actionLink: s.action_link || undefined
+        }))
+        localStorage.setItem(ORDER_STEPS_KEY, JSON.stringify(synced))
+      }
+    } catch (err) {
+      console.error('Background order steps sync failed:', err)
+    }
+  }
+  syncOrderSteps()
+
   const data = localStorage.getItem(ORDER_STEPS_KEY)
   if (!data) {
     localStorage.setItem(ORDER_STEPS_KEY, JSON.stringify(defaultOrderSteps))

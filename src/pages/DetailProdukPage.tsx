@@ -6,7 +6,8 @@ import {
 } from 'react-icons/io5'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { getLocalProducts, type ProductData, getLocalAppSettings } from '../utils/dummyData'
+import { type ProductData, getLocalAppSettings } from '../utils/dummyData'
+import { supabase } from '../utils/supabaseClient'
 
 function formatPrice(price: number) {
   return 'Rp ' + price.toLocaleString('id-ID')
@@ -17,27 +18,80 @@ export default function DetailProdukPage() {
   const navigate = useNavigate()
   const [product, setProduct] = useState<ProductData | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<ProductData[]>([])
+  const [loading, setLoading] = useState(true)
   const settings = getLocalAppSettings()
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    const allProducts = getLocalProducts()
-    const found = allProducts.find(p => String(p.id) === String(id))
-    if (found) {
-      setProduct(found)
-      const related = allProducts
-        .filter(p => String(p.id) !== String(id))
-        .sort((a, b) => {
-          const matchA = a.category === found.category ? 1 : 0
-          const matchB = b.category === found.category ? 1 : 0
-          return matchB - matchA
-        })
-        .slice(0, 3)
-      setRelatedProducts(related)
-    } else {
-      setProduct(null)
+    async function loadProductDetails() {
+      if (!id) {
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('id', { ascending: true })
+
+        if (error) {
+          console.error('Error loading product details from Supabase:', error.message)
+        } else if (data) {
+          const allProducts: ProductData[] = data.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            originalPrice: p.original_price,
+            rating: Number(p.rating),
+            reviews: p.reviews,
+            badge: p.badge,
+            desc: p.desc,
+            features: p.features,
+            previewSlug: p.preview_slug,
+            available: p.available,
+            color: p.color,
+            thumbnail: p.thumbnail
+          }))
+
+          const found = allProducts.find(p => String(p.id) === String(id))
+          if (found) {
+            setProduct(found)
+            const related = allProducts
+              .filter(p => String(p.id) !== String(id))
+              .sort((a, b) => {
+                const matchA = a.category === found.category ? 1 : 0
+                const matchB = b.category === found.category ? 1 : 0
+                return matchB - matchA
+              })
+              .slice(0, 3)
+            setRelatedProducts(related)
+          } else {
+            setProduct(null)
+          }
+        }
+      } catch (err) {
+        console.error('Exception loading product details:', err)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    loadProductDetails()
   }, [id])
+
+  if (loading) {
+    return (
+      <div className="bg-[#FAF9F6] text-stone-850 font-body min-h-screen flex flex-col justify-between">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0F3A26]"></div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   if (!product) {
     return (

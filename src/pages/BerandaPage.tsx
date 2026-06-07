@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IoArrowForwardOutline,
@@ -12,7 +12,8 @@ import {
 } from 'react-icons/io5'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { getLocalProducts, getLocalAppSettings } from '../utils/dummyData'
+import { type ProductData, getLocalAppSettings } from '../utils/dummyData'
+import { supabase } from '../utils/supabaseClient'
 
 const features = [
   {
@@ -45,8 +46,49 @@ const steps = [
 ]
 
 export default function BerandaPage() {
-  const [products] = useState(() => getLocalProducts().slice(0, 4)) // Show top 4 templates on homepage
+  const [products, setProducts] = useState<ProductData[]>([])
+  const [loading, setLoading] = useState(true)
   const settings = getLocalAppSettings()
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('id', { ascending: true })
+          .limit(4)
+
+        if (error) {
+          console.error('Error fetching homepage products:', error.message)
+        } else if (data) {
+          const mapped: ProductData[] = data.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            originalPrice: p.original_price,
+            rating: Number(p.rating),
+            reviews: p.reviews,
+            badge: p.badge,
+            desc: p.desc,
+            features: p.features,
+            previewSlug: p.preview_slug,
+            available: p.available,
+            color: p.color,
+            thumbnail: p.thumbnail
+          }))
+          setProducts(mapped)
+        }
+      } catch (err) {
+        console.error('Failed to load products:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   const waMessage = (name: string) =>
     encodeURIComponent(`Halo Bimora Digital! Saya tertarik untuk memesan template undangan digital *${name}*. Boleh konsultasi lebih lanjut?`)
@@ -107,14 +149,19 @@ export default function BerandaPage() {
           </div>
 
           {/* Grid Layout */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {products.map(product => {
-              const discountPercent = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-              return (
-                <div
-                  key={product.id}
-                  className="bg-white border border-stone-200 rounded-lg overflow-hidden flex flex-col hover:border-[#0F3A26] transition-all shadow-sm group"
-                >
+          {loading ? (
+            <div className="flex items-center justify-center py-20 w-full col-span-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0F3A26]"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {products.map(product => {
+                const discountPercent = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white border border-stone-200 rounded-lg overflow-hidden flex flex-col hover:border-[#0F3A26] transition-all shadow-sm group"
+                  >
                   {/* Thumbnail Image */}
                   <div className="relative aspect-[16/10] w-full bg-stone-900 overflow-hidden border-b border-stone-100">
                     {product.thumbnail ? (
@@ -188,6 +235,7 @@ export default function BerandaPage() {
               )
             })}
           </div>
+          )}
 
           <div className="text-center mt-10">
             <Link
