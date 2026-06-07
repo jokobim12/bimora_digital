@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IoSearchOutline, IoCloseOutline, IoCheckmarkCircle, IoChevronBackOutline,
-  IoEyeOutline, IoLogoWhatsapp
+  IoEyeOutline, IoLogoWhatsapp, IoPlayCircleOutline
 } from 'react-icons/io5'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -207,6 +207,18 @@ export default function ProdukPage() {
                         <span className="text-xs text-stone-400 line-through">Rp {product.originalPrice.toLocaleString('id-ID')}</span>
                       </div>
                     </div>
+
+                    {/* Preview button */}
+                    {product.previewSlug && (
+                      <Link
+                        to={`/undangan/${product.previewSlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full mb-2 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#0F3A26] text-[10px] font-bold rounded-md transition-all text-center flex items-center justify-center gap-1.5"
+                      >
+                        <IoPlayCircleOutline className="text-sm" /> Lihat Preview Template
+                      </Link>
+                    )}
 
                     {/* Action buttons */}
                     <div className="grid grid-cols-2 gap-2">

@@ -103,18 +103,25 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     }
   }, [])
 
+  // Helper: send command to YouTube IFrame API with correct origin & format
+  const sendYT = (func: string) => {
+    youtubePlayerRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func, args: '' }),
+      'https://www.youtube.com'
+    )
+  }
+
   // Play audio when cover is opened
   const handleOpenInvitation = () => {
-    // Request fullscreen mode for a truly immersive experience (hiding URL bar, signal bar, battery, etc.)
     const docEl = document.documentElement
     try {
       if (docEl.requestFullscreen) {
         docEl.requestFullscreen().catch(err => {
           console.warn('Failed to enter fullscreen mode:', err)
         })
-      } else if ((docEl as any).webkitRequestFullscreen) { /* Safari */
+      } else if ((docEl as any).webkitRequestFullscreen) {
         (docEl as any).webkitRequestFullscreen()
-      } else if ((docEl as any).msRequestFullscreen) { /* IE11 */
+      } else if ((docEl as any).msRequestFullscreen) {
         (docEl as any).msRequestFullscreen()
       }
     } catch (e) {
@@ -125,40 +132,50 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     setTimeout(() => {
       setIsOpen(true)
       if (youtubeId) {
-        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*')
+        // Retry playVideo a few times to handle player init delay
+        const tryPlay = (attempt = 0) => {
+          sendYT('playVideo')
+          if (attempt < 5) setTimeout(() => tryPlay(attempt + 1), 800)
+        }
+        tryPlay()
       } else if (audioRef.current) {
         audioRef.current.play().catch(err => {
-          console.log('Audio autoplay prevented by browser. User interaction required.', err)
+          console.log('Audio autoplay prevented by browser.', err)
         })
       }
-    }, 1000)
+    }, 800)
   }
 
-  // Toggle Mute Audio
+  // Toggle Mute/Pause Audio
   const toggleMute = () => {
     if (youtubeId) {
       if (isMuted) {
-        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'unmute' }), '*')
-        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*')
+        sendYT('unMute')
+        sendYT('playVideo')
       } else {
-        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'mute' }), '*')
-        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo' }), '*')
+        sendYT('mute')
+        sendYT('pauseVideo')
       }
-      setIsMuted(!isMuted)
-    } else if (audioRef.current) {
-      const audio = audioRef.current
-      if (isMuted) {
-        // Resume: unmute first then play
-        audio.muted = false
-        audio.play().catch(() => {})
-      } else {
-        // Pause: pause then mark muted so UI stays in sync
-        audio.pause()
-        audio.muted = true
-      }
-      setIsMuted(!isMuted)
+      setIsMuted(prev => !prev)
+    } else {
+      // For HTML audio: just flip state — useEffect handles play/pause
+      setIsMuted(prev => !prev)
     }
   }
+
+  // Imperatively drive HTML audio play/pause whenever isMuted changes.
+  // This avoids the React quirk where re-renders can clobber imperative DOM
+  // mutations (e.g. audio.muted = false) before play() gets a chance to fire.
+  useEffect(() => {
+    if (youtubeId || !audioRef.current) return
+    const audio = audioRef.current
+    if (isMuted) {
+      audio.pause()
+    } else if (isOpen) {
+      // Only auto-play once the invitation is open
+      audio.play().catch(() => {})
+    }
+  }, [isMuted, isOpen, youtubeId])
 
   // Intersection Observer to update active navigation tab based on viewport scroll position
   useEffect(() => {
@@ -178,6 +195,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
           else if (entry.target === eventRef.current) setActiveTab('event')
           else if (entry.target === galleryRef.current) setActiveTab('gallery')
           else if (entry.target === wishesRef.current) setActiveTab('wishes')
+          else if (entry.target.id === 'gift-section') setActiveTab('gift')
         }
       })
     }
@@ -189,6 +207,9 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     if (eventRef.current) observer.observe(eventRef.current)
     if (galleryRef.current) observer.observe(galleryRef.current)
     if (wishesRef.current) observer.observe(wishesRef.current)
+    // Also observe the gift section inside WishesPage
+    const giftSection = appContainerRef.current?.querySelector('#gift-section')
+    if (giftSection) observer.observe(giftSection)
 
     return () => {
       observer.disconnect()
@@ -237,6 +258,20 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     else if (tabId === 'gallery') targetRef = galleryRef
     else if (tabId === 'wishes') targetRef = wishesRef
 
+    if (tabId === 'gift') {
+      // Gift section lives inside WishesPage — find it by ID in the scroll container
+      const giftEl = appContainerRef.current?.querySelector('#gift-section')
+      if (giftEl) {
+        giftEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        setActiveTab('gift')
+      } else {
+        // Fallback: scroll to wishes then set gift active
+        wishesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        setActiveTab('gift')
+      }
+      return
+    }
+
     if (targetRef && targetRef.current) {
       targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
       setActiveTab(tabId)
@@ -274,7 +309,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
       {youtubeId ? (
         <iframe
           ref={youtubePlayerRef}
-          src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=0&loop=1&playlist=${youtubeId}&controls=0`}
+          src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=0&loop=1&playlist=${youtubeId}&controls=0&origin=${encodeURIComponent(window.location.origin)}`}
           className="w-0 h-0 absolute pointer-events-none opacity-0"
           allow="autoplay"
         />
@@ -282,7 +317,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
         <audio 
           ref={audioRef} 
           src={data.music_url || '/music/jawa.mp3'} 
-          loop 
+          loop
         />
       )}
 
