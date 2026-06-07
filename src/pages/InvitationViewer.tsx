@@ -5,6 +5,7 @@ import type { WeddingData } from '../utils/dummyData'
 import { supabase } from '../utils/supabaseClient'
 import InvitationTemplateGelap from '../components/template/jawa/gelap_premium/InvitationTemplate'
 import InvitationTemplateCerah from '../components/template/jawa/cerah_premium/InvitationTemplate'
+import InvitationTemplateTerracotta from '../components/template/jawa/terracotta_premium/InvitationTemplate'
 
 export default function InvitationViewer() {
   const { slug } = useParams<{ slug: string }>()
@@ -57,7 +58,7 @@ export default function InvitationViewer() {
           <h1 className="font-heading text-xl text-emerald-600 tracking-wide font-bold uppercase">Undangan Tidak Ditemukan</h1>
           
           <p className="font-body text-[10px] text-stone-500 leading-relaxed mt-4 mb-6">
-            Mohon maaf, tautan undangan digital yang Anda akses tidak terdaftar dalam database sistem Bimora Digital. Silakan periksa kembali alamat tautan Anda.
+            Mohon maaf, tautan undangan digital yang Anda akses tidak terdaftar dalam database sistem Bimora Digital. Silaka periksa kembali alamat tautan Anda.
           </p>
 
           <Link 
@@ -97,6 +98,10 @@ export default function InvitationViewer() {
   }
 
   // Active Invitation - Render Template Container based on template_type!
+  if (weddingData.template_type === 'jawa_terracotta') {
+    return <InvitationTemplateTerracotta data={weddingData} />
+  }
+
   if (weddingData.template_type === 'jawa_cerah') {
     return <InvitationTemplateCerah data={weddingData} />
   }

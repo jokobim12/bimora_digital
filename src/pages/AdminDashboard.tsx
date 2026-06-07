@@ -1925,6 +1925,7 @@ export default function AdminDashboard() {
                     >
                       <option value="jawa">Adat Jawa Premium - Gelap Megah</option>
                       <option value="jawa_cerah">Adat Jawa Premium - Cerah Jawa</option>
+                      <option value="jawa_terracotta">Adat Jawa Premium - Terracotta Jawa</option>
                       <option value="modern" disabled>Modern Emerald (Coming Soon)</option>
                     </select>
                   </div>

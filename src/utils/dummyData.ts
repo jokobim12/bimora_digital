@@ -85,7 +85,7 @@ export const cerahWeddingData: WeddingData = {
   is_active: true,
   groom_name: 'Raden Mas Prabowo Utomo, S.T.',
   groom_nickname: 'Prabowo',
-  groom_parents: 'Putra Kedua dari Bapak Haryo & Ibu Ratih\nSurakarta, Jawa Tengah',
+  groom_parents: 'Putra Kedua dari Bapak H. Haryo & Ibu Ratih\nSurakarta, Jawa Tengah',
   groom_photo: '/assets/mempelai/groom.png',
   bride_name: 'Diah Ayu Sekar Arum, S.Hum.',
   bride_nickname: 'Ayu',
@@ -111,6 +111,39 @@ export const cerahWeddingData: WeddingData = {
   ]
 }
 
+export const terracottaWeddingData: WeddingData = {
+  id: 'terracotta-demo',
+  slug: 'ami-malik',
+  template_type: 'jawa_terracotta',
+  is_active: true,
+  groom_name: 'Muhammad Malik Ibrahim, S.E.',
+  groom_nickname: 'Malik',
+  groom_parents: 'Putra Pertama dari Bapak H. Ahmad Malik & Ibu Hjh. Rahmawati\nSurakarta, Jawa Tengah',
+  groom_photo: '/assets/mempelai/groom.png',
+  bride_name: 'Siti Ami Astuti, S.Pd.',
+  bride_nickname: 'Ami',
+  bride_parents: 'Putri Kedua dari Bapak H. Gunawan & Ibu Hjh. Sulastri\nSurakarta, Jawa Tengah',
+  bride_photo: '/assets/mempelai/bride.png',
+  couple_photo: '/assets/mempelai/mempelai.png',
+  wedding_date: '2026-03-23',
+  akad_time: '08:00 - 10:00 WIB',
+  resepsi_time: '11:00 - 14:00 WIB',
+  location_name: 'Gedung Joglo Heritage',
+  location_address: 'Jl. Adi Sucipto No.150, Kec. Colomadu, Kabupaten Karanganyar, Jawa Tengah 57174',
+  maps_embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.195029419177!2d110.80624027476343!3d-7.553683692460142!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a16efe15db5e1%3A0x6bcfd35bcfa2ebf9!2sGedung%20Graha%20Saba%20Buana!5e0!3m2!1sid!2sid!4v1700000000000',
+  maps_link: 'https://maps.app.goo.gl/9Zc1zG29XvH2T1x27',
+  music_url: '/music/jawa.mp3',
+  gifts: [
+    { bank: 'BCA', number: '7823908123', name: 'Muhammad Malik' },
+    { bank: 'Bank Mandiri', number: '138002138902', name: 'Siti Ami Astuti' }
+  ],
+  stories: [
+    { year: '2023', title: 'Awal Bertemu', desc: 'Pertemuan tidak sengaja di perpustakaan daerah, berawal dari ketertarikan pada buku sastra Jawa yang sama.' },
+    { year: '2025', title: 'Khitbah', desc: 'Mengikat janji suci komitmen di hadapan kedua orang tua secara khidmat dan penuh rasa syukur.' },
+    { year: '2026', title: 'Pernikahan', desc: 'Mengukir janji suci pernikahan suci untuk mengarungi bahtera rumah tangga selamanya.' }
+  ]
+}
+
 // LocalStorage Helper functions for the Prototype Database
 const STORAGE_KEY = 'bimora_invitations'
 const PRODUCTS_KEY = 'bimora_products'
@@ -120,14 +153,14 @@ export function getLocalInvitations(): WeddingData[] {
   const data = localStorage.getItem(STORAGE_KEY)
   if (!data) {
     // Initialize with default template data
-    const initial = [defaultWeddingData, cerahWeddingData]
+    const initial = [defaultWeddingData, cerahWeddingData, terracottaWeddingData]
     localStorage.setItem(STORAGE_KEY, JSON.stringify(initial))
     return initial
   }
   try {
     return JSON.parse(data)
   } catch (e) {
-    return [defaultWeddingData, cerahWeddingData]
+    return [defaultWeddingData, cerahWeddingData, terracottaWeddingData]
   }
 }
 
@@ -205,6 +238,21 @@ export const defaultProducts: ProductData[] = [
     previewSlug: 'prabowo-ayu',
     available: true,
     color: 'from-orange-100 to-amber-50 text-amber-800',
+  },
+  {
+    id: 6,
+    name: 'Adat Jawa Premium – Terracotta Jawa',
+    category: 'Adat Jawa',
+    price: 149000,
+    originalPrice: 199000,
+    rating: 5,
+    reviews: 18,
+    badge: 'Populer',
+    desc: 'Keindahan tradisi Jawa dalam balutan warna terracotta hangat, luhur, berkelas, dengan ornamen wayang kulit dan gunungan.',
+    features: ['Countdown Hari H', 'Love Story Timeline', 'Galeri 15 Foto', 'Kustom Musik MP3', 'Maps Interaktif', 'Form RSVP'],
+    previewSlug: 'ami-malik',
+    available: true,
+    color: 'from-amber-800 to-[#8B3D30] text-[#FAF6EC]',
   },
   {
     id: 2,
