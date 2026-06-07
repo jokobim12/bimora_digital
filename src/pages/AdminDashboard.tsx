@@ -214,8 +214,8 @@ export default function AdminDashboard() {
   const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 1.5 * 1024 * 1024) {
-        alert('File musik terlalu besar! Maksimal 1.5MB untuk penyimpanan browser (LocalStorage). Silakan kompres audio Anda atau gunakan tautan URL musik eksternal.')
+      if (file.size > 4.0 * 1024 * 1024) {
+        alert('File musik terlalu besar! Maksimal 4.0MB untuk penyimpanan browser (LocalStorage). Silakan kompres audio Anda atau gunakan tautan URL musik/YouTube.')
         return
       }
       const reader = new FileReader()
@@ -2128,7 +2128,7 @@ export default function AdminDashboard() {
                       className="w-full px-3 py-2 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs font-mono"
                     />
                     <p className="text-[9px] text-stone-400 mt-1 font-body leading-relaxed">
-                      *Gunakan URL file audio mentah (diakhiri .mp3). Tautan halaman web/YouTube tidak didukung.
+                      *Gunakan URL file audio (.mp3) atau tautan video YouTube (contoh: https://www.youtube.com/watch?v=... atau https://youtu.be/...).
                     </p>
                     {musicUrl.startsWith('data:audio') && (
                       <button

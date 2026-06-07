@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { IoVolumeMuteOutline, IoPhonePortraitOutline, IoDesktopOutline, IoLogoInstagram } from 'react-icons/io5'
 import Cover from './Cover'
 import BottomNav from './BottomNav'
@@ -27,7 +27,16 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
   const [showToast, setShowToast] = useState(false)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const youtubePlayerRef = useRef<HTMLIFrameElement | null>(null)
   const appContainerRef = useRef<HTMLDivElement | null>(null)
+
+  const youtubeId = useMemo(() => {
+    const url = data.music_url
+    if (!url) return null
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/
+    const match = url.match(regExp)
+    return (match && match[2].length === 11) ? match[2] : null
+  }, [data.music_url])
 
   // References for navigation scroll target
   const homeRef = useRef<HTMLDivElement | null>(null)
@@ -81,7 +90,9 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     setClosingCover(true)
     setTimeout(() => {
       setIsOpen(true)
-      if (audioRef.current) {
+      if (youtubeId) {
+        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*')
+      } else if (audioRef.current) {
         audioRef.current.play().catch(err => {
           console.log('Audio autoplay prevented by browser. User interaction required.', err)
         })
@@ -91,7 +102,16 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
 
   // Toggle Mute Audio
   const toggleMute = () => {
-    if (audioRef.current) {
+    if (youtubeId) {
+      if (isMuted) {
+        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'unmute' }), '*')
+        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*')
+      } else {
+        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'mute' }), '*')
+        youtubePlayerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo' }), '*')
+      }
+      setIsMuted(!isMuted)
+    } else if (audioRef.current) {
       if (isMuted) {
         audioRef.current.play().catch(() => {})
         audioRef.current.muted = false
@@ -212,11 +232,20 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     <div className="min-h-screen bg-[#FAF6EC] text-[#4A3B32] relative font-body selection:bg-[#B38520]/25 selection:text-[#332211]">
       
       {/* Audio player element */}
-      <audio 
-        ref={audioRef} 
-        src={data.music_url || '/music/jawa.mp3'} 
-        loop 
-      />
+      {youtubeId ? (
+        <iframe
+          ref={youtubePlayerRef}
+          src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=0&loop=1&playlist=${youtubeId}&controls=0`}
+          className="w-0 h-0 absolute pointer-events-none opacity-0"
+          allow="autoplay"
+        />
+      ) : (
+        <audio 
+          ref={audioRef} 
+          src={data.music_url || '/music/jawa.mp3'} 
+          loop 
+        />
+      )}
 
       {/* Cover / Welcome Screen */}
       {!isOpen && (
