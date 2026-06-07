@@ -169,13 +169,22 @@ body {
 .gold-divider .line {
   width: 60px;
   height: 1px;
-  background: #D4A847;
+  background: linear-gradient(90deg, transparent, #D4A847, transparent);
 }
 .gold-divider .diamond {
   width: 8px;
   height: 8px;
   background: #D4A847;
   transform: rotate(45deg);
+}
+
+/* ===== THEME JAWA FONT OVERRIDES ===== */
+.theme-jawa {
+  --font-heading: 'Cormorant Garamond', serif !important;
+  --font-body: 'Poppins', sans-serif !important;
+  --gold: #D4A847;
+  --gold-light: #F0D78C;
+  --gold-dark: #B8922F;
 }
 
 /* Bottom Navigation active styles */

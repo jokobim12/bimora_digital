@@ -206,7 +206,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-[150] bg-[#FAF6EC] flex flex-col items-center justify-center text-[#4A3B32] p-6">
+      <div className="theme-jawa fixed inset-0 z-[150] bg-[#FAF6EC] flex flex-col items-center justify-center text-[#4A3B32] p-6">
         <div className="flex flex-col items-center max-w-sm text-center">
           <img 
             src="/assets/gunungan.png" 
@@ -229,7 +229,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF6EC] text-[#4A3B32] relative font-body selection:bg-[#B38520]/25 selection:text-[#332211]">
+    <div className="theme-jawa min-h-screen bg-[#FAF6EC] text-[#4A3B32] relative font-body selection:bg-[#B38520]/25 selection:text-[#332211]">
       
       {/* Audio player element */}
       {youtubeId ? (

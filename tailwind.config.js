@@ -18,10 +18,10 @@ export default {
         }
       },
       fontFamily: {
-        heading: ['Inter', 'sans-serif'],
-        serif: ['Cormorant Garamond', 'serif'],
-        script: ['Great Vibes', 'cursive'],
-        body: ['Inter', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Inter', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Cormorant Garamond', 'serif'],
+        script: ['var(--font-script)', 'Great Vibes', 'cursive'],
+        body: ['var(--font-body)', 'Inter', 'sans-serif'],
       },
       boxShadow: {
         'gold-glow': '0 0 20px rgba(212, 168, 71, 0.3)',
