@@ -201,6 +201,10 @@ export default function AdminDashboard() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > 1.5 * 1024 * 1024) {
+        alert('File gambar terlalu besar! Maksimal 1.5MB agar penyimpanan browser tidak penuh. Silakan kompres gambar Anda.')
+        return
+      }
       const reader = new FileReader()
       reader.onloadend = () => setter(reader.result as string)
       reader.readAsDataURL(file)
@@ -210,8 +214,8 @@ export default function AdminDashboard() {
   const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 4.5 * 1024 * 1024) {
-        alert('File terlalu besar! Maksimal 4.5MB untuk prototype database.')
+      if (file.size > 1.5 * 1024 * 1024) {
+        alert('File musik terlalu besar! Maksimal 1.5MB untuk penyimpanan browser (LocalStorage). Silakan kompres audio Anda atau gunakan tautan URL musik eksternal.')
         return
       }
       const reader = new FileReader()
@@ -225,6 +229,11 @@ export default function AdminDashboard() {
     const remaining = 6 - gallery.length
     if (remaining <= 0) {
       triggerToast('Maksimal 6 foto galeri!')
+      return
+    }
+    const oversized = files.some(file => file.size > 1.2 * 1024 * 1024)
+    if (oversized) {
+      alert('Ada foto galeri yang melebihi 1.2MB! Mohon kompres atau gunakan foto berukuran lebih kecil.')
       return
     }
     files.slice(0, remaining).forEach(file => {
@@ -351,10 +360,15 @@ export default function AdminDashboard() {
       stories: stories.filter(s => s.year.trim() && s.title.trim() && s.desc.trim())
     }
 
-    addOrUpdateLocalInvitation(payload)
-    loadAllData()
-    setShowInvitationModal(false)
-    triggerToast(editingInvitation ? 'Undangan diperbarui!' : 'Undangan baru ditambahkan!')
+    try {
+      addOrUpdateLocalInvitation(payload)
+      loadAllData()
+      setShowInvitationModal(false)
+      triggerToast(editingInvitation ? 'Undangan diperbarui!' : 'Undangan baru ditambahkan!')
+    } catch (err) {
+      console.error('Local Storage Quota Exceeded:', err)
+      alert('Gagal menyimpan! Memori penyimpanan browser penuh (LocalStorage limit 5MB). Silakan gunakan URL musik eksternal atau bersihkan file musik/foto galeri Anda yang terlalu besar.')
+    }
   }
 
   // ----------------------------------------------------
@@ -494,10 +508,15 @@ export default function AdminDashboard() {
       thumbnail: pThumbnail
     }
 
-    addOrUpdateLocalProduct(payload)
-    loadAllData()
-    setShowProductModal(false)
-    triggerToast(editingProduct ? 'Produk diperbarui!' : 'Produk baru ditambahkan!')
+    try {
+      addOrUpdateLocalProduct(payload)
+      loadAllData()
+      setShowProductModal(false)
+      triggerToast(editingProduct ? 'Produk diperbarui!' : 'Produk baru ditambahkan!')
+    } catch (err) {
+      console.error('Local Storage Quota Exceeded:', err)
+      alert('Gagal menyimpan produk! Memori penyimpanan browser penuh (LocalStorage limit 5MB). Coba gunakan resolusi gambar thumbnail yang lebih kecil.')
+    }
   }
 
   // ----------------------------------------------------
@@ -549,10 +568,15 @@ export default function AdminDashboard() {
       totalPrice: Number(oTotalPrice)
     }
 
-    addOrUpdateLocalOrder(payload)
-    loadAllData()
-    setShowOrderModal(false)
-    triggerToast(editingOrder ? 'Pesanan diperbarui!' : 'Pesanan baru ditambahkan!')
+    try {
+      addOrUpdateLocalOrder(payload)
+      loadAllData()
+      setShowOrderModal(false)
+      triggerToast(editingOrder ? 'Pesanan diperbarui!' : 'Pesanan baru ditambahkan!')
+    } catch (err) {
+      console.error('Local Storage Quota Exceeded:', err)
+      alert('Gagal menyimpan pesanan! Memori penyimpanan browser penuh.')
+    }
   }
 
   // format price helper
@@ -1012,10 +1036,15 @@ export default function AdminDashboard() {
       slug: portSlug ? portSlug.trim() : null,
       category: portCategory
     }
-    addOrUpdateLocalPortfolio(pData)
-    setPortfolios(getLocalPortfolios())
-    setShowPortfolioModal(false)
-    triggerToast(editingPortfolio ? 'Portofolio berhasil diupdate' : 'Portofolio berhasil ditambahkan')
+    try {
+      addOrUpdateLocalPortfolio(pData)
+      setPortfolios(getLocalPortfolios())
+      setShowPortfolioModal(false)
+      triggerToast(editingPortfolio ? 'Portofolio berhasil diupdate' : 'Portofolio berhasil ditambahkan')
+    } catch (err) {
+      console.error('Local Storage Quota Exceeded:', err)
+      alert('Gagal menyimpan portofolio! Memori penyimpanan browser penuh.')
+    }
   }
 
   // 2. Contacts / Global Settings Submit Handler
@@ -1025,13 +1054,18 @@ export default function AdminDashboard() {
       alert('Semua bidang harus diisi!')
       return
     }
-    saveLocalAppSettings({
-      waNumber: setWaNumber.trim(),
-      instagram: setInstagram.trim(),
-      serviceHours: setServiceHours.trim(),
-      waMessageDefault: setWaMsg.trim()
-    })
-    triggerToast('Pengaturan aplikasi berhasil disimpan')
+    try {
+      saveLocalAppSettings({
+        waNumber: setWaNumber.trim(),
+        instagram: setInstagram.trim(),
+        serviceHours: setServiceHours.trim(),
+        waMessageDefault: setWaMsg.trim()
+      })
+      triggerToast('Pengaturan aplikasi berhasil disimpan')
+    } catch (err) {
+      console.error('Local Storage Quota Exceeded:', err)
+      alert('Gagal menyimpan pengaturan! Memori penyimpanan browser penuh.')
+    }
   }
 
   // 3. Order Steps CRUD Handlers
@@ -1083,10 +1117,15 @@ export default function AdminDashboard() {
       actionText: stepActionText.trim() || undefined,
       actionLink: stepActionLink.trim() || undefined
     }
-    addOrUpdateLocalOrderStep(sData)
-    setOrderSteps(getLocalOrderSteps())
-    setShowStepModal(false)
-    triggerToast(editingStep ? 'Langkah berhasil diupdate' : 'Langkah berhasil ditambahkan')
+    try {
+      addOrUpdateLocalOrderStep(sData)
+      setOrderSteps(getLocalOrderSteps())
+      setShowStepModal(false)
+      triggerToast(editingStep ? 'Langkah berhasil diupdate' : 'Langkah berhasil ditambahkan')
+    } catch (err) {
+      console.error('Local Storage Quota Exceeded:', err)
+      alert('Gagal menyimpan langkah! Memori penyimpanan browser penuh.')
+    }
   }
 
   // 4. Subtab View Renderers
@@ -2284,6 +2323,10 @@ export default function AdminDashboard() {
                         onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
+                            if (file.size > 1.5 * 1024 * 1024) {
+                              alert('File gambar terlalu besar! Maksimal 1.5MB agar penyimpanan browser tidak penuh. Silakan kompres gambar Anda.')
+                              return
+                            }
                             const reader = new FileReader()
                             reader.onloadend = () => {
                               setRawProductImage(reader.result as string)
