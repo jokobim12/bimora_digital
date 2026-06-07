@@ -87,6 +87,22 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
 
   // Play audio when cover is opened
   const handleOpenInvitation = () => {
+    // Request fullscreen mode for a truly immersive experience (hiding URL bar, signal bar, battery, etc.)
+    const docEl = document.documentElement
+    try {
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch(err => {
+          console.warn('Failed to enter fullscreen mode:', err)
+        })
+      } else if ((docEl as any).webkitRequestFullscreen) { /* Safari */
+        (docEl as any).webkitRequestFullscreen()
+      } else if ((docEl as any).msRequestFullscreen) { /* IE11 */
+        (docEl as any).msRequestFullscreen()
+      }
+    } catch (e) {
+      console.warn('Fullscreen API is not supported on this browser/device.', e)
+    }
+
     setClosingCover(true)
     setTimeout(() => {
       setIsOpen(true)
