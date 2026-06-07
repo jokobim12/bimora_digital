@@ -1,16 +1,14 @@
-import { useState } from 'react'
-import { IoImagesOutline, IoCloseOutline } from 'react-icons/io5'
+import { IoImagesOutline } from 'react-icons/io5'
 import type { WeddingData } from '../../../../utils/dummyData'
 import { defaultWeddingData } from '../../../../utils/dummyData'
 
 interface GalleryPageProps {
   isDesktopMode?: boolean
   data?: WeddingData
+  onImageClick?: (src: string) => void
 }
 
-export default function GalleryPage({ isDesktopMode = false, data = defaultWeddingData }: GalleryPageProps) {
-  const [lightbox, setLightbox] = useState<string | null>(null)
-
+export default function GalleryPage({ isDesktopMode = false, data = defaultWeddingData, onImageClick }: GalleryPageProps) {
   const galleryImages = data.gallery || []
   const photos = Array.from({ length: 6 }, (_, i) => ({
     id: i,
@@ -51,7 +49,11 @@ export default function GalleryPage({ isDesktopMode = false, data = defaultWeddi
                 isExpandedMobile ? 'col-span-2 aspect-[2/1]' : 'col-span-1'
               }`}
               style={{ transitionDelay: `${(photo.id + 1) * 100}ms` }}
-              onClick={() => hasImage && setLightbox(photo.src)}
+              onClick={() => {
+                if (hasImage && onImageClick) {
+                  onImageClick(photo.src)
+                }
+              }}
             >
               {hasImage ? (
                 <img 
@@ -74,29 +76,6 @@ export default function GalleryPage({ isDesktopMode = false, data = defaultWeddi
 
       {/* Ornament gunungan */}
       <img className="w-16 lg:w-20 h-auto opacity-30 my-10 lg:my-12 reveal reveal-scale delay-200" src="/assets/gunungan.png" alt="" />
-
-      {/* Lightbox Popup */}
-      <div 
-        className={`fixed inset-0 z-[90] bg-black/95 flex items-center justify-center transition-all duration-300 ${
-          lightbox ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setLightbox(null)}
-      >
-        <button 
-          className="absolute top-6 right-6 text-3xl text-[#FAF6EC]/70 hover:text-[#FAF6EC] hover:scale-110 transition-all cursor-pointer"
-          aria-label="Tutup galeri"
-        >
-          <IoCloseOutline />
-        </button>
-        {lightbox && (
-          <img 
-            className="max-w-[90%] max-h-[80vh] object-contain rounded-xl border border-[#B38520]/30 shadow-2xl animate-[zoomIn_0.3s_ease]" 
-            src={lightbox} 
-            alt="Gallery Fullscreen" 
-            onClick={e => e.stopPropagation()} 
-          />
-        )}
-      </div>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { IoVolumeMuteOutline, IoPhonePortraitOutline, IoDesktopOutline, IoLogoInstagram } from 'react-icons/io5'
+import { IoVolumeMuteOutline, IoPhonePortraitOutline, IoDesktopOutline, IoLogoInstagram, IoCloseOutline } from 'react-icons/io5'
 import Cover from './Cover'
 import BottomNav from './BottomNav'
 import type { TabId } from './BottomNav'
@@ -25,6 +25,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
   const [isDesktopMode, setIsDesktopMode] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
   const [showToast, setShowToast] = useState(false)
+  const [lightbox, setLightbox] = useState<string | null>(null)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const youtubePlayerRef = useRef<HTMLIFrameElement | null>(null)
@@ -85,6 +86,23 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
     return () => window.removeEventListener('resize', checkSize)
   }, [])
 
+  // Dynamic theme-color meta tag
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="theme-color"]')
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('name', 'theme-color')
+      document.head.appendChild(meta)
+    }
+    const originalColor = meta.getAttribute('content')
+    meta.setAttribute('content', '#030303')
+    return () => {
+      if (originalColor) {
+        meta.setAttribute('content', originalColor)
+      }
+    }
+  }, [])
+
   // Play audio when cover is opened
   const handleOpenInvitation = () => {
     // Request fullscreen mode for a truly immersive experience (hiding URL bar, signal bar, battery, etc.)
@@ -128,11 +146,15 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
       }
       setIsMuted(!isMuted)
     } else if (audioRef.current) {
+      const audio = audioRef.current
       if (isMuted) {
-        audioRef.current.play().catch(() => {})
-        audioRef.current.muted = false
+        // Resume: unmute first then play
+        audio.muted = false
+        audio.play().catch(() => {})
       } else {
-        audioRef.current.muted = true
+        // Pause: pause then mark muted so UI stays in sync
+        audio.pause()
+        audio.muted = true
       }
       setIsMuted(!isMuted)
     }
@@ -385,6 +407,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
             <div
               ref={appContainerRef}
               className="w-full overflow-y-auto overflow-x-hidden no-scrollbar flex-grow pb-[70px] h-full relative z-10"
+              style={{ overscrollBehaviorY: 'contain' }}
             >
               {/* PAGE 1: HOME */}
               <div ref={homeRef} className="border-b border-jawa-gold/10">
@@ -408,7 +431,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
               {/* PAGE 4: GALERI */}
               <div ref={galleryRef} className="border-b border-jawa-gold/10">
                 <SectionGate>
-                  <GalleryPage isDesktopMode={isDesktopMode} data={data} />
+                  <GalleryPage isDesktopMode={isDesktopMode} data={data} onImageClick={setLightbox} />
                 </SectionGate>
               </div>
 
@@ -442,6 +465,29 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
                 musicPlaying={!isMuted}
                 toggleMusic={toggleMute} 
               />
+            </div>
+
+            {/* Lightbox Popup (Rendered inside main container to stay within simulated screen constraints) */}
+            <div 
+              className={`absolute inset-0 z-[90] bg-black/95 flex items-center justify-center transition-all duration-300 ${
+                lightbox ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+              onClick={() => setLightbox(null)}
+            >
+              <button 
+                className="absolute top-6 right-6 text-3xl text-jawa-gold/70 hover:text-jawa-gold hover:scale-110 transition-all cursor-pointer z-[100]"
+                aria-label="Tutup galeri"
+              >
+                <IoCloseOutline />
+              </button>
+              {lightbox && (
+                <img 
+                  className="max-w-[90%] max-h-[80vh] object-contain rounded-xl border border-jawa-gold/20 shadow-2xl animate-[zoomIn_0.3s_ease]" 
+                  src={lightbox} 
+                  alt="Gallery Fullscreen" 
+                  onClick={e => e.stopPropagation()} 
+                />
+              )}
             </div>
           </div>
         </div>
