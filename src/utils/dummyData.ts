@@ -421,4 +421,188 @@ export function saveLocalAboutUs(about: AboutUsData): void {
   localStorage.setItem(ABOUT_KEY, JSON.stringify(about))
 }
 
+// ====================================================
+// NEW DYNAMIC APPLICATION CONFIGS (PORTFOLIO, SETTINGS, CARA ORDER)
+// ====================================================
+
+// 1. PORTFOLIO DATA
+export interface PortfolioData {
+  id: string
+  couple: string
+  template: string
+  date: string
+  slug: string | null
+  category: string
+}
+
+const PORTFOLIOS_KEY = 'bimora_portfolios'
+
+export const defaultPortfolios: PortfolioData[] = [
+  { id: 'port-1', couple: 'Bimantara & Claraveliana', template: 'Adat Jawa Premium', date: 'Agustus 2026', slug: 'bimantara-clara', category: 'Adat Jawa' },
+  { id: 'port-2', couple: 'Ahmad & Siti Nur', template: 'Adat Jawa Premium', date: 'Juli 2026', slug: null, category: 'Adat Jawa' },
+  { id: 'port-3', couple: 'Bagas & Dewi Ayu', template: 'Adat Jawa Premium', date: 'Juni 2026', slug: null, category: 'Adat Jawa' },
+  { id: 'port-4', couple: 'Rizky & Fitria', template: 'Modern Emerald', date: 'Mei 2026', slug: null, category: 'Modern' },
+  { id: 'port-5', couple: 'Hendra & Rini', template: 'Adat Jawa Premium', date: 'April 2026', slug: null, category: 'Adat Jawa' },
+  { id: 'port-6', couple: 'Dimas & Laras', template: 'Nuansa Islami', date: 'Maret 2026', slug: null, category: 'Islami' },
+]
+
+export function getLocalPortfolios(): PortfolioData[] {
+  const data = localStorage.getItem(PORTFOLIOS_KEY)
+  if (!data) {
+    localStorage.setItem(PORTFOLIOS_KEY, JSON.stringify(defaultPortfolios))
+    return defaultPortfolios
+  }
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    return defaultPortfolios
+  }
+}
+
+export function saveLocalPortfolios(portfolios: PortfolioData[]): void {
+  localStorage.setItem(PORTFOLIOS_KEY, JSON.stringify(portfolios))
+}
+
+export function addOrUpdateLocalPortfolio(portfolio: PortfolioData): void {
+  const list = getLocalPortfolios()
+  const index = list.findIndex(item => item.id === portfolio.id)
+  if (index !== -1) {
+    list[index] = portfolio
+  } else {
+    list.push(portfolio)
+  }
+  saveLocalPortfolios(list)
+}
+
+export function deleteLocalPortfolio(id: string): void {
+  const list = getLocalPortfolios()
+  const filtered = list.filter(item => item.id !== id)
+  saveLocalPortfolios(filtered)
+}
+
+// 2. APP SETTINGS (CONTACTS & GLOBAL CONFIGS)
+export interface AppSettingsData {
+  waNumber: string
+  instagram: string
+  serviceHours: string
+  waMessageDefault: string
+}
+
+const SETTINGS_KEY = 'bimora_settings'
+
+export const defaultAppSettings: AppSettingsData = {
+  waNumber: '6281234567890',
+  instagram: 'jokobim12',
+  serviceHours: 'Senin – Sabtu, 08:00 – 21:00 WIB',
+  waMessageDefault: 'Halo Bimora Digital! Saya tertarik untuk memesan template undangan digital. Boleh konsultasi lebih lanjut?'
+}
+
+export function getLocalAppSettings(): AppSettingsData {
+  const data = localStorage.getItem(SETTINGS_KEY)
+  if (!data) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultAppSettings))
+    return defaultAppSettings
+  }
+  try {
+    const parsed = JSON.parse(data)
+    // Make sure all fields are preset
+    return { ...defaultAppSettings, ...parsed }
+  } catch (e) {
+    return defaultAppSettings
+  }
+}
+
+export function saveLocalAppSettings(settings: AppSettingsData): void {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+}
+
+// 3. CARA ORDER STEPS
+export interface OrderStepData {
+  id: string
+  num: string
+  title: string
+  desc: string
+  iconType: string // e.g. 'sparkles', 'chatbubble', 'document', 'images', 'card'
+  actionText?: string
+  actionLink?: string
+}
+
+const ORDER_STEPS_KEY = 'bimora_order_steps'
+
+export const defaultOrderSteps: OrderStepData[] = [
+  {
+    id: 'step-1',
+    num: '01',
+    title: 'Pilih Template Desain',
+    desc: 'Pilih desain terbaik yang sesuai dengan tema pernikahan Anda di halaman katalog Produk. Kami memiliki varian Adat Jawa Premium, Modern Minimalis, dan Islami Sakral.',
+    iconType: 'sparkles',
+    actionText: 'Lihat Katalog',
+    actionLink: '/produk'
+  },
+  {
+    id: 'step-2',
+    num: '02',
+    title: 'Hubungi Kami via WhatsApp',
+    desc: 'Klik tombol pesan pada desain pilihan Anda untuk langsung terhubung dengan admin kami melalui WhatsApp. Sampaikan jika ada permintaan kustomisasi khusus.',
+    iconType: 'chatbubble',
+    actionText: 'Chat Admin',
+    actionLink: 'https://wa.me/6281234567890?text=Halo%20Bimora%20Digital,%20saya%20ingin%20pesan%20undangan%20digital'
+  },
+  {
+    id: 'step-3',
+    num: '03',
+    title: 'Kirim Data Pernikahan',
+    desc: 'Isi formulir data pernikahan yang kami sediakan secara lengkap. Mulai dari detail mempelai, akad nikah, resepsi, galeri foto, kisah cinta, hingga data kado digital.',
+    iconType: 'document'
+  },
+  {
+    id: 'step-4',
+    num: '04',
+    title: 'Proses Pengerjaan & Revisi',
+    desc: 'Kami akan memproses undangan Anda dalam waktu 1x24 jam. Anda akan menerima link draf undangan untuk ditinjau, dan kami berikan revisi gratis hingga hasil benar-benar sempurna.',
+    iconType: 'images'
+  },
+  {
+    id: 'step-5',
+    num: '05',
+    title: 'Pelunasan & Undangan Siap Sebar!',
+    desc: 'Setelah desain disetujui, lakukan pembayaran. Kami akan mengaktifkan link resmi undangan Anda yang siap disebarkan ke keluarga, kerabat, dan teman-teman tercinta.',
+    iconType: 'card'
+  }
+]
+
+export function getLocalOrderSteps(): OrderStepData[] {
+  const data = localStorage.getItem(ORDER_STEPS_KEY)
+  if (!data) {
+    localStorage.setItem(ORDER_STEPS_KEY, JSON.stringify(defaultOrderSteps))
+    return defaultOrderSteps
+  }
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    return defaultOrderSteps
+  }
+}
+
+export function saveLocalOrderSteps(steps: OrderStepData[]): void {
+  localStorage.setItem(ORDER_STEPS_KEY, JSON.stringify(steps))
+}
+
+export function addOrUpdateLocalOrderStep(step: OrderStepData): void {
+  const list = getLocalOrderSteps()
+  const index = list.findIndex(item => item.id === step.id)
+  if (index !== -1) {
+    list[index] = step
+  } else {
+    list.push(step)
+  }
+  saveLocalOrderSteps(list)
+}
+
+export function deleteLocalOrderStep(id: string): void {
+  const list = getLocalOrderSteps()
+  const filtered = list.filter(item => item.id !== id)
+  saveLocalOrderSteps(filtered)
+}
+
 

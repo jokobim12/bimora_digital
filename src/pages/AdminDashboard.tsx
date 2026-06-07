@@ -6,13 +6,17 @@ import {
   IoChevronBackOutline, IoSaveOutline,
   IoHomeOutline, IoCartOutline, IoReceiptOutline, IoMailOpenOutline,
   IoLogOutOutline, IoWalletOutline,
-  IoSearchOutline, IoMenuOutline, IoCheckmarkCircleOutline
+  IoSearchOutline, IoMenuOutline, IoCheckmarkCircleOutline,
+  IoSettingsOutline, IoImagesOutline, IoLogoWhatsapp, IoListOutline
 } from 'react-icons/io5'
-import type { WeddingData, ProductData, OrderData } from '../utils/dummyData'
+import type { WeddingData, ProductData, OrderData, PortfolioData, OrderStepData } from '../utils/dummyData'
 import {
   getLocalInvitations, addOrUpdateLocalInvitation, deleteLocalInvitation,
   getLocalProducts, addOrUpdateLocalProduct, deleteLocalProduct,
-  getLocalOrders, addOrUpdateLocalOrder, deleteLocalOrder
+  getLocalOrders, addOrUpdateLocalOrder, deleteLocalOrder,
+  getLocalPortfolios, addOrUpdateLocalPortfolio, deleteLocalPortfolio,
+  getLocalAppSettings, saveLocalAppSettings,
+  getLocalOrderSteps, addOrUpdateLocalOrderStep, deleteLocalOrderStep
 } from '../utils/dummyData'
 
 export default function AdminDashboard() {
@@ -21,23 +25,30 @@ export default function AdminDashboard() {
   const [loginError, setLoginError] = useState(false)
   
   // Navigation
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'produk' | 'pesanan' | 'template'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'produk' | 'pesanan' | 'template' | 'settings'>('dashboard')
+  const [settingsSubTab, setSettingsSubTab] = useState<'portfolio' | 'contacts' | 'cara-order'>('portfolio')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Data States
   const [invitations, setInvitations] = useState<WeddingData[]>([])
   const [products, setProducts] = useState<ProductData[]>([])
   const [orders, setOrders] = useState<OrderData[]>([])
+  const [portfolios, setPortfolios] = useState<PortfolioData[]>([])
+  const [orderSteps, setOrderSteps] = useState<OrderStepData[]>([])
 
   // Modal Controls
   const [showInvitationModal, setShowInvitationModal] = useState(false)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false)
+  const [showStepModal, setShowStepModal] = useState(false)
 
   // Editing items
   const [editingInvitation, setEditingInvitation] = useState<WeddingData | null>(null)
   const [editingProduct, setEditingProduct] = useState<ProductData | null>(null)
   const [editingOrder, setEditingOrder] = useState<OrderData | null>(null)
+  const [editingPortfolio, setEditingPortfolio] = useState<PortfolioData | null>(null)
+  const [editingStep, setEditingStep] = useState<OrderStepData | null>(null)
 
   // Search filters
   const [searchQuery, setSearchQuery] = useState('')
@@ -109,6 +120,32 @@ export default function AdminDashboard() {
   const [oStatus, setOStatus] = useState<'Menunggu Pembayaran' | 'Diproses' | 'Selesai' | 'Dibatalkan'>('Menunggu Pembayaran')
   const [oTotalPrice, setOTotalPrice] = useState(129000)
 
+  // ----------------------------------------------------
+  // SETTINGS FORM STATES
+  // ----------------------------------------------------
+  // 1. AppSettings Contacts
+  const [setWaNumber, setSetWaNumber] = useState('')
+  const [setInstagram, setSetInstagram] = useState('')
+  const [setServiceHours, setSetServiceHours] = useState('')
+  const [setWaMsg, setSetWaMsg] = useState('')
+
+  // 2. Portfolio Item Form States
+  const [portId, setPortId] = useState('')
+  const [portCouple, setPortCouple] = useState('')
+  const [portTemplate, setPortTemplate] = useState('')
+  const [portDate, setPortDate] = useState('')
+  const [portSlug, setPortSlug] = useState('')
+  const [portCategory, setPortCategory] = useState('Adat Jawa')
+
+  // 3. Order Step Form States
+  const [stepId, setStepId] = useState('')
+  const [stepNum, setStepNum] = useState('')
+  const [stepTitle, setStepTitle] = useState('')
+  const [stepDesc, setStepDesc] = useState('')
+  const [stepIconType, setStepIconType] = useState('sparkles')
+  const [stepActionText, setStepActionText] = useState('')
+  const [stepActionLink, setStepActionLink] = useState('')
+
   // Check auth on load
   useEffect(() => {
     const session = sessionStorage.getItem('bimora_admin_auth')
@@ -122,6 +159,15 @@ export default function AdminDashboard() {
     setInvitations(getLocalInvitations())
     setProducts(getLocalProducts())
     setOrders(getLocalOrders())
+    setPortfolios(getLocalPortfolios())
+    setOrderSteps(getLocalOrderSteps())
+
+    // Load App Settings
+    const s = getLocalAppSettings()
+    setSetWaNumber(s.waNumber)
+    setSetInstagram(s.instagram)
+    setSetServiceHours(s.serviceHours)
+    setSetWaMsg(s.waMessageDefault)
   }
 
   const triggerToast = (msg: string) => {
@@ -517,47 +563,50 @@ export default function AdminDashboard() {
   // ----------------------------------------------------
   // LOGIN SCREEN
   // ----------------------------------------------------
+  // ----------------------------------------------------
+  // LOGIN SCREEN
+  // ----------------------------------------------------
   if (!isLoggedIn) {
     return (
-      <div className="bg-slate-50 min-h-screen flex items-center justify-center font-body px-4">
-        <div className="bg-white border border-slate-200 p-8 rounded-lg w-full max-w-[400px] flex flex-col items-center">
-          <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-white font-heading font-bold text-xl">B</span>
+      <div className="admin-page-root bg-[#F8FAFC] min-h-screen flex items-center justify-center font-sans px-4">
+        <div className="bg-white border border-slate-200/60 p-10 rounded-lg w-full max-w-[420px] flex flex-col items-center">
+          <div className="w-14 h-14 bg-emerald-600 rounded-lg flex items-center justify-center mb-5">
+            <span className="text-white font-sans font-extrabold text-2xl">B</span>
           </div>
-          <h1 className="font-heading text-xl text-stone-800 tracking-wider font-bold">Portal Admin Bimora</h1>
-          <p className="font-body text-xs text-stone-400 mb-6 mt-1 text-center">Silakan masukkan kata sandi akses admin</p>
+          <h1 className="font-sans text-xl text-slate-800 tracking-wider font-bold">Portal Admin Bimora</h1>
+          <p className="font-sans text-xs text-slate-400 mb-6 mt-1 text-center">Silakan masukkan kata sandi akses admin</p>
 
           <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
             <div>
-              <label className="block text-xs text-stone-500 mb-1.5 font-semibold">Kata Sandi</label>
+              <label className="block text-xs text-slate-500 mb-1.5 font-semibold">Kata Sandi</label>
               <div className="relative flex items-center">
-                <IoLockClosedOutline className="absolute left-3 text-emerald-600 text-base pointer-events-none" />
+                <IoLockClosedOutline className="absolute left-3.5 text-emerald-600 text-base pointer-events-none" />
                 <input
                   type="password"
                   placeholder="Masukkan kata sandi (admin)"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none rounded-lg text-xs text-stone-800 font-body"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none rounded-lg text-xs text-slate-800 transition-all font-sans"
                   required
                 />
               </div>
             </div>
 
             {loginError && (
-              <span className="text-[11px] text-red-500 font-medium text-center bg-red-50 py-1.5 px-3 rounded-lg border border-red-200">
+              <span className="text-[11px] text-red-500 font-semibold text-center bg-red-50 py-2 px-3 rounded-lg border border-red-100">
                 Sandi salah! Silakan coba lagi.
               </span>
             )}
 
             <button
               type="submit"
-              className="mt-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-body text-xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+              className="mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold uppercase tracking-widest rounded-lg transition-all active:scale-98 cursor-pointer"
             >
               Masuk Dashboard
             </button>
           </form>
 
-          <Link to="/" className="mt-6 text-xs text-stone-400 hover:text-emerald-600 transition-colors flex items-center gap-1">
+          <Link to="/" className="mt-8 text-xs text-slate-400 hover:text-emerald-600 transition-all flex items-center gap-1 font-medium font-sans">
             <IoChevronBackOutline /> Kembali ke Beranda
           </Link>
         </div>
@@ -577,7 +626,7 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Ringkasan Sistem</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-sans">Ringkasan Sistem</h1>
           <p className="text-xs text-stone-400 mt-1">Berikut adalah ikhtisar operasional platform Bimora Digital saat ini.</p>
         </div>
 
@@ -629,7 +678,7 @@ export default function AdminDashboard() {
         {/* Recent Orders List */}
         <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
           <div className="p-4 border-b border-stone-100 flex justify-between items-center">
-            <h3 className="font-heading font-semibold text-stone-800 text-sm">Pesanan Terbaru</h3>
+            <h3 className="font-sans font-semibold text-stone-800 text-sm">Pesanan Terbaru</h3>
             <button 
               onClick={() => setActiveTab('pesanan')}
               className="text-xs text-emerald-600 font-semibold hover:underline"
@@ -687,7 +736,7 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Manajemen Produk / Template</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-sans">Manajemen Produk / Template</h1>
             <p className="text-xs text-stone-400 mt-1">Atur harga, deskripsi, preview, dan visibilitas katalog produk Anda.</p>
           </div>
           <button
@@ -818,7 +867,7 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Manajemen Pesanan</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-sans">Manajemen Pesanan</h1>
             <p className="text-xs text-stone-400 mt-1">Kelola dan update status pemesanan template undangan dari klien.</p>
           </div>
           <button
@@ -914,6 +963,398 @@ export default function AdminDashboard() {
     )
   }
 
+  // ====================================================
+  // SETTINGS TAB ACTIONS & RENDERS
+  // ====================================================
+
+  // 1. Portfolio CRUD Handlers
+  const handleCreatePortfolio = () => {
+    setEditingPortfolio(null)
+    setPortId('port-' + Date.now())
+    setPortCouple('')
+    setPortTemplate('Adat Jawa Premium')
+    setPortDate('')
+    setPortSlug('')
+    setPortCategory('Adat Jawa')
+    setShowPortfolioModal(true)
+  }
+
+  const handleEditPortfolio = (port: PortfolioData) => {
+    setEditingPortfolio(port)
+    setPortId(port.id)
+    setPortCouple(port.couple)
+    setPortTemplate(port.template)
+    setPortDate(port.date)
+    setPortSlug(port.slug || '')
+    setPortCategory(port.category)
+    setShowPortfolioModal(true)
+  }
+
+  const handleDeletePortfolio = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus portofolio ini?')) {
+      deleteLocalPortfolio(id)
+      setPortfolios(getLocalPortfolios())
+      triggerToast('Portofolio berhasil dihapus')
+    }
+  }
+
+  const handlePortfolioFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!portCouple.trim()) {
+      alert('Nama Pasangan harus diisi!')
+      return
+    }
+    const pData: PortfolioData = {
+      id: portId,
+      couple: portCouple,
+      template: portTemplate,
+      date: portDate,
+      slug: portSlug ? portSlug.trim() : null,
+      category: portCategory
+    }
+    addOrUpdateLocalPortfolio(pData)
+    setPortfolios(getLocalPortfolios())
+    setShowPortfolioModal(false)
+    triggerToast(editingPortfolio ? 'Portofolio berhasil diupdate' : 'Portofolio berhasil ditambahkan')
+  }
+
+  // 2. Contacts / Global Settings Submit Handler
+  const handleSettingsFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!setWaNumber.trim() || !setInstagram.trim() || !setServiceHours.trim() || !setWaMsg.trim()) {
+      alert('Semua bidang harus diisi!')
+      return
+    }
+    saveLocalAppSettings({
+      waNumber: setWaNumber.trim(),
+      instagram: setInstagram.trim(),
+      serviceHours: setServiceHours.trim(),
+      waMessageDefault: setWaMsg.trim()
+    })
+    triggerToast('Pengaturan aplikasi berhasil disimpan')
+  }
+
+  // 3. Order Steps CRUD Handlers
+  const handleCreateStep = () => {
+    setEditingStep(null)
+    setStepId('step-' + Date.now())
+    const nextNum = String(orderSteps.length + 1).padStart(2, '0')
+    setStepNum(nextNum)
+    setStepTitle('')
+    setStepDesc('')
+    setStepIconType('sparkles')
+    setStepActionText('')
+    setStepActionLink('')
+    setShowStepModal(true)
+  }
+
+  const handleEditStep = (step: OrderStepData) => {
+    setEditingStep(step)
+    setStepId(step.id)
+    setStepNum(step.num)
+    setStepTitle(step.title)
+    setStepDesc(step.desc)
+    setStepIconType(step.iconType)
+    setStepActionText(step.actionText || '')
+    setStepActionLink(step.actionLink || '')
+    setShowStepModal(true)
+  }
+
+  const handleDeleteStep = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus langkah ini?')) {
+      deleteLocalOrderStep(id)
+      setOrderSteps(getLocalOrderSteps())
+      triggerToast('Langkah berhasil dihapus')
+    }
+  }
+
+  const handleStepFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!stepNum.trim() || !stepTitle.trim() || !stepDesc.trim()) {
+      alert('Nomor, Judul, dan Keterangan harus diisi!')
+      return
+    }
+    const sData: OrderStepData = {
+      id: stepId,
+      num: stepNum,
+      title: stepTitle,
+      desc: stepDesc,
+      iconType: stepIconType,
+      actionText: stepActionText.trim() || undefined,
+      actionLink: stepActionLink.trim() || undefined
+    }
+    addOrUpdateLocalOrderStep(sData)
+    setOrderSteps(getLocalOrderSteps())
+    setShowStepModal(false)
+    triggerToast(editingStep ? 'Langkah berhasil diupdate' : 'Langkah berhasil ditambahkan')
+  }
+
+  // 4. Subtab View Renderers
+  const renderPortfolioSubTab = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-sm font-bold text-stone-750">Daftar Portofolio Undangan Klien</h2>
+          <button
+            onClick={handleCreatePortfolio}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <IoAddOutline /> Tambah Portofolio
+          </button>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-stone-500 uppercase text-[10px] tracking-wider border-b border-stone-100">
+                  <th className="p-4 font-semibold">Nama Pasangan</th>
+                  <th className="p-4 font-semibold">Nama Template</th>
+                  <th className="p-4 font-semibold">Bulan/Tahun</th>
+                  <th className="p-4 font-semibold">Kategori</th>
+                  <th className="p-4 font-semibold">Slug Undangan</th>
+                  <th className="p-4 font-semibold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {portfolios.map(item => (
+                  <tr key={item.id} className="hover:bg-slate-50/55">
+                    <td className="p-4 font-bold text-stone-850">{item.couple}</td>
+                    <td className="p-4">{item.template}</td>
+                    <td className="p-4">{item.date}</td>
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 bg-stone-100 text-stone-700 rounded text-[9px] font-bold uppercase">
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="p-4 font-mono text-emerald-700">
+                      {item.slug ? `/undangan/${item.slug}` : '-'}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-center gap-1.5">
+                        <button
+                          onClick={() => handleEditPortfolio(item)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <IoCreateOutline className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePortfolio(item.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Hapus"
+                        >
+                          <IoTrashOutline className="text-base" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {portfolios.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-stone-400">
+                      Belum ada portofolio yang terdaftar.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderContactsSubTab = () => {
+    return (
+      <div className="bg-white border border-stone-200 rounded-lg p-6 max-w-2xl">
+        <h2 className="text-sm font-bold text-stone-750 mb-4 pb-2 border-b border-stone-100">Informasi Kontak & Jam Layanan</h2>
+        <form onSubmit={handleSettingsFormSubmit} className="space-y-4">
+          <div>
+            <label className="block text-stone-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Nomor WhatsApp CS</label>
+            <input
+              type="text"
+              value={setWaNumber}
+              onChange={e => setSetWaNumber(e.target.value)}
+              placeholder="Contoh: 6281234567890 (awali dengan kode negara tanpa +)"
+              className="w-full px-3.5 py-2.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
+              required
+            />
+            <span className="text-[10px] text-stone-400 block mt-1">Gunakan format angka lengkap tanpa simbol spasi atau tanda hubung, diawali dengan 62.</span>
+          </div>
+
+          <div>
+            <label className="block text-stone-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Username Instagram</label>
+            <input
+              type="text"
+              value={setInstagram}
+              onChange={e => setSetInstagram(e.target.value)}
+              placeholder="Contoh: jokobim12"
+              className="w-full px-3.5 py-2.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-stone-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Jam Layanan</label>
+            <input
+              type="text"
+              value={setServiceHours}
+              onChange={e => setSetServiceHours(e.target.value)}
+              placeholder="Contoh: Senin – Sabtu, 08:00 – 21:00 WIB"
+              className="w-full px-3.5 py-2.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-stone-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Pesan Default WhatsApp</label>
+            <textarea
+              rows={3}
+              value={setWaMsg}
+              onChange={e => setSetWaMsg(e.target.value)}
+              placeholder="Pesan default saat pengunjung menekan tombol hubungi kami."
+              className="w-full px-3.5 py-2.5 bg-white border border-stone-200 outline-none focus:border-emerald-500 rounded-lg text-xs resize-none"
+              required
+            />
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-[#0F3A26] hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer font-sans"
+            >
+              <IoSaveOutline className="text-base" /> Simpan Pengaturan
+            </button>
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  const renderCaraOrderSubTab = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-sm font-bold text-stone-750">Langkah Cara Pemesanan</h2>
+          <button
+            onClick={handleCreateStep}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <IoAddOutline /> Tambah Langkah
+          </button>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-stone-500 uppercase text-[10px] tracking-wider border-b border-stone-100">
+                  <th className="p-4 font-semibold w-16 text-center">No</th>
+                  <th className="p-4 font-semibold w-48">Judul Langkah</th>
+                  <th className="p-4 font-semibold">Deskripsi Langkah</th>
+                  <th className="p-4 font-semibold w-28 text-center">Tipe Ikon</th>
+                  <th className="p-4 font-semibold w-36">Teks Tombol</th>
+                  <th className="p-4 font-semibold text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {orderSteps.map(item => (
+                  <tr key={item.id} className="hover:bg-slate-50/55">
+                    <td className="p-4 font-bold text-stone-500 text-center">{item.num}</td>
+                    <td className="p-4 font-bold text-stone-850">{item.title}</td>
+                    <td className="p-4 text-stone-550 leading-relaxed font-light">{item.desc}</td>
+                    <td className="p-4 text-center">
+                      <span className="px-2 py-0.5 bg-emerald-50 text-[#0F3A26] border border-emerald-100 rounded text-[9px] font-bold uppercase">
+                        {item.iconType}
+                      </span>
+                    </td>
+                    <td className="p-4 font-semibold text-stone-600">{item.actionText || '-'}</td>
+                    <td className="p-4">
+                      <div className="flex justify-center gap-1.5">
+                        <button
+                          onClick={() => handleEditStep(item)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <IoCreateOutline className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStep(item.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Hapus"
+                        >
+                          <IoTrashOutline className="text-base" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {orderSteps.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-stone-400">
+                      Belum ada langkah pemesanan yang terdaftar.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderSettingsTab = () => {
+    return (
+      <div className="space-y-6">
+        <div className="border-b border-stone-200 pb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-stone-850 font-sans">Pengaturan &amp; Konten Aplikasi</h1>
+          <p className="text-xs text-stone-400 mt-1">Konfigurasi dinamis informasi kontak global, halaman portofolio, dan panduan langkah pemesanan.</p>
+        </div>
+
+        {/* Subtab Navigation */}
+        <div className="flex border-b border-stone-200 gap-1.5 pb-px">
+          <button
+            onClick={() => setSettingsSubTab('portfolio')}
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              settingsSubTab === 'portfolio' 
+                ? 'border-[#0F3A26] text-[#0F3A26]' 
+                : 'border-transparent text-stone-450 hover:text-stone-700'
+            }`}
+          >
+            <IoImagesOutline className="text-base" /> Portofolio Klien
+          </button>
+          <button
+            onClick={() => setSettingsSubTab('contacts')}
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              settingsSubTab === 'contacts' 
+                ? 'border-[#0F3A26] text-[#0F3A26]' 
+                : 'border-transparent text-stone-450 hover:text-stone-700'
+            }`}
+          >
+            <IoLogoWhatsapp className="text-base" /> Hubungi Kami &amp; Kontak
+          </button>
+          <button
+            onClick={() => setSettingsSubTab('cara-order')}
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              settingsSubTab === 'cara-order' 
+                ? 'border-[#0F3A26] text-[#0F3A26]' 
+                : 'border-transparent text-stone-450 hover:text-stone-700'
+            }`}
+          >
+            <IoListOutline className="text-base" /> Cara Order (Langkah)
+          </button>
+        </div>
+
+        {/* Subtab Contents */}
+        {settingsSubTab === 'portfolio' && renderPortfolioSubTab()}
+        {settingsSubTab === 'contacts' && renderContactsSubTab()}
+        {settingsSubTab === 'cara-order' && renderCaraOrderSubTab()}
+      </div>
+    )
+  }
+
   const renderTemplateTab = () => {
     const filteredInvites = invitations.filter(i =>
       i.groom_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -925,7 +1366,7 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-heading">Manajemen Template Undangan Klien</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-800 font-sans">Manajemen Template Undangan Klien</h1>
             <p className="text-xs text-stone-400 mt-1">Buat, edit, dan konfigurasi isi undangan digital (mempelai, peta, lagu, dll) milik klien.</p>
           </div>
           <button
@@ -1036,79 +1477,105 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="bg-slate-50 text-stone-800 min-h-screen font-body flex flex-col md:flex-row">
+    <div className="admin-page-root bg-[#F8FAFC] text-slate-800 min-h-screen font-sans flex flex-col md:flex-row">
       
       {/* SIDEBAR (Desktop) */}
-      <aside className="hidden md:flex w-64 bg-slate-950 text-slate-300 flex-col shrink-0">
-        <div className="p-5 border-b border-slate-900 flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-heading font-bold text-sm">B</span>
+      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200/80 text-slate-700 flex-col shrink-0 font-sans">
+        <div className="py-5 px-6 border-b border-slate-100 flex items-center gap-3 bg-white shrink-0">
+          <div className="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-white font-sans font-extrabold text-base">B</span>
           </div>
-          <span className="font-heading text-base font-bold tracking-wider text-white">BIMORA <span className="text-emerald-500">ADMIN</span></span>
+          <span className="font-sans text-sm font-bold tracking-wider text-slate-800">
+            BIMORA <span className="text-emerald-600 font-extrabold">ADMIN</span>
+          </span>
         </div>
 
-        <nav className="p-4 flex-grow space-y-1">
+        <nav className="px-4 py-5 flex-grow space-y-1">
           <button
             onClick={() => { setActiveTab('dashboard'); setSearchQuery('') }}
-            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
-              activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide text-left transition-all ${
+              activeTab === 'dashboard'
+                ? 'bg-emerald-600 text-white font-bold'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <IoHomeOutline className="text-base" /> Dashboard
+            <IoHomeOutline className="text-base shrink-0" /> Dashboard
           </button>
           
           <button
             onClick={() => { setActiveTab('produk'); setSearchQuery('') }}
-            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
-              activeTab === 'produk' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide text-left transition-all ${
+              activeTab === 'produk'
+                ? 'bg-emerald-600 text-white font-bold'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <IoCartOutline className="text-base" /> Produk / Katalog
+            <IoCartOutline className="text-base shrink-0" /> Produk / Katalog
           </button>
 
           <button
             onClick={() => { setActiveTab('pesanan'); setSearchQuery('') }}
-            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
-              activeTab === 'pesanan' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide text-left transition-all ${
+              activeTab === 'pesanan'
+                ? 'bg-emerald-600 text-white font-bold'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <IoReceiptOutline className="text-base" /> Pesanan
+            <IoReceiptOutline className="text-base shrink-0" /> Pesanan
           </button>
 
           <button
             onClick={() => { setActiveTab('template'); setSearchQuery('') }}
-            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide transition-colors ${
-              activeTab === 'template' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-900 hover:text-white'
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide text-left transition-all ${
+              activeTab === 'template'
+                ? 'bg-emerald-600 text-white font-bold'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <IoMailOpenOutline className="text-base" /> Template Undangan
+            <IoMailOpenOutline className="text-base shrink-0" /> Template Undangan
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('settings'); setSearchQuery('') }}
+            className={`w-full py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold tracking-wide text-left transition-all ${
+              activeTab === 'settings'
+                ? 'bg-emerald-600 text-white font-bold'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <IoSettingsOutline className="text-base shrink-0" /> Pengaturan Aplikasi
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-900">
-          <a href="/" target="_blank" rel="noreferrer" className="block text-center text-[10px] uppercase font-bold tracking-wider py-2 bg-slate-900 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors mb-2">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+          <a
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            className="block text-center text-[10px] uppercase font-bold tracking-wider py-2.5 bg-white border border-slate-200/60 hover:bg-slate-50 rounded-lg text-slate-600 hover:text-slate-900 transition-all mb-2.5"
+          >
             Lihat Website Utama
           </a>
           <button
             onClick={handleLogout}
-            className="w-full py-2 bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 hover:text-rose-700 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <IoLogOutOutline className="text-base" /> Keluar
+            <IoLogOutOutline className="text-base shrink-0" /> Keluar
           </button>
         </div>
       </aside>
 
       {/* HEADER (Mobile & Tablet) */}
-      <header className="md:hidden bg-slate-950 border-b border-slate-900 text-white py-3 px-4 flex justify-between items-center sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-heading font-bold text-xs">B</span>
+      <header className="md:hidden bg-white border-b border-slate-200 text-slate-800 py-3.5 px-5 flex justify-between items-center sticky top-0 z-40 font-sans">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-white font-sans font-extrabold text-sm">B</span>
           </div>
-          <span className="font-heading text-sm font-bold tracking-wide">BIMORA ADMIN</span>
+          <span className="font-sans text-sm font-bold tracking-wide text-slate-800">BIMORA ADMIN</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-1 text-slate-400 hover:text-white text-2xl"
+          className="p-1.5 text-slate-500 hover:text-slate-800 text-2xl transition-colors"
         >
           <IoMenuOutline />
         </button>
@@ -1116,34 +1583,62 @@ export default function AdminDashboard() {
 
       {/* MOBILE MENU NAV */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-950 border-b border-slate-900 text-slate-300 flex flex-col p-4 space-y-2 sticky top-[53px] z-30">
+        <div className="md:hidden bg-white border-b border-slate-200 text-slate-700 flex flex-col p-5 space-y-2.5 sticky top-[57px] z-30 font-sans">
           <button
             onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); setSearchQuery('') }}
-            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : ''}`}
+            className={`py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold transition-all ${
+              activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
           >
             <IoHomeOutline /> Dashboard
           </button>
           <button
             onClick={() => { setActiveTab('produk'); setMobileMenuOpen(false); setSearchQuery('') }}
-            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'produk' ? 'bg-emerald-600 text-white' : ''}`}
+            className={`py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold transition-all ${
+              activeTab === 'produk' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
           >
             <IoCartOutline /> Produk / Katalog
           </button>
           <button
             onClick={() => { setActiveTab('pesanan'); setMobileMenuOpen(false); setSearchQuery('') }}
-            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'pesanan' ? 'bg-emerald-600 text-white' : ''}`}
+            className={`py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold transition-all ${
+              activeTab === 'pesanan' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
           >
             <IoReceiptOutline /> Pesanan
           </button>
           <button
             onClick={() => { setActiveTab('template'); setMobileMenuOpen(false); setSearchQuery('') }}
-            className={`py-2 px-3 rounded-lg flex items-center gap-2 text-xs ${activeTab === 'template' ? 'bg-emerald-600 text-white' : ''}`}
+            className={`py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold transition-all ${
+              activeTab === 'template' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
           >
             <IoMailOpenOutline /> Template Undangan
           </button>
-          <div className="pt-2 border-t border-slate-900 flex justify-between gap-2">
-            <a href="/" target="_blank" className="flex-grow text-center py-2 bg-slate-900 text-[10px] font-bold rounded-lg text-slate-400">Web Utama</a>
-            <button onClick={handleLogout} className="px-4 py-2 bg-red-950 text-red-400 text-xs font-bold rounded-lg">Keluar</button>
+          <button
+            onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); setSearchQuery('') }}
+            className={`py-2.5 px-4 rounded-lg flex items-center gap-3 text-xs font-semibold transition-all ${
+              activeTab === 'settings' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <IoSettingsOutline /> Pengaturan Aplikasi
+          </button>
+          
+          <div className="pt-3 border-t border-slate-100 flex justify-between gap-3 font-sans">
+            <a
+              href="/"
+              target="_blank"
+              className="flex-grow text-center py-2.5 bg-slate-50 border border-slate-200/60 text-[10px] font-bold rounded-lg text-slate-600 hover:text-slate-800 transition-all"
+            >
+              Web Utama
+            </a>
+            <button
+              onClick={handleLogout}
+              className="px-5 py-2.5 bg-rose-50 border border-rose-100 text-rose-600 hover:text-rose-700 text-xs font-bold rounded-lg transition-all"
+            >
+              Keluar
+            </button>
           </div>
         </div>
       )}
@@ -1154,6 +1649,7 @@ export default function AdminDashboard() {
         {activeTab === 'produk' && renderProdukTab()}
         {activeTab === 'pesanan' && renderPesananTab()}
         {activeTab === 'template' && renderTemplateTab()}
+        {activeTab === 'settings' && renderSettingsTab()}
       </main>
 
       {/* ==================================================== */}
@@ -2060,7 +2556,216 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Global Toast */}
+      {/* ==================================================== */}
+      {/* MODAL 4: PORTFOLIO CRUD FORM */}
+      {/* ==================================================== */}
+      {showPortfolioModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white border border-stone-200 rounded-lg w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="border-b border-stone-200 p-4 flex justify-between items-center bg-emerald-50 shrink-0">
+              <h2 className="font-heading text-sm text-emerald-900 font-bold">
+                {editingPortfolio ? 'Edit Portofolio Klien' : 'Tambah Portofolio Klien Baru'}
+              </h2>
+              <button onClick={() => setShowPortfolioModal(false)} className="text-lg text-stone-400 hover:text-stone-700 cursor-pointer">
+                <IoCloseOutline />
+              </button>
+            </div>
+            
+            <form onSubmit={handlePortfolioFormSubmit} className="p-5 overflow-y-auto flex-grow flex flex-col gap-4 no-scrollbar font-body">
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Nama Pasangan</label>
+                <input
+                  type="text"
+                  value={portCouple}
+                  onChange={e => setPortCouple(e.target.value)}
+                  placeholder="Contoh: Bimantara & Claraveliana"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Nama Template</label>
+                <input
+                  type="text"
+                  value={portTemplate}
+                  onChange={e => setPortTemplate(e.target.value)}
+                  placeholder="Contoh: Adat Jawa Premium"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Bulan / Tahun</label>
+                <input
+                  type="text"
+                  value={portDate}
+                  onChange={e => setPortDate(e.target.value)}
+                  placeholder="Contoh: Agustus 2026"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Kategori Desain</label>
+                <select
+                  value={portCategory}
+                  onChange={e => setPortCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-body"
+                >
+                  <option value="Adat Jawa">Adat Jawa</option>
+                  <option value="Modern">Modern</option>
+                  <option value="Islami">Islami</option>
+                  <option value="Sunda">Sunda</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Slug Undangan Live (Opsional)</label>
+                <input
+                  type="text"
+                  value={portSlug}
+                  onChange={e => setPortSlug(e.target.value)}
+                  placeholder="Contoh: bimantara-clara (kosongkan jika Privat)"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                />
+                <span className="text-[10px] text-stone-400 block mt-1 leading-normal font-light">Jika diisi, pengunjung dapat mengklik tombol demo. Jika kosong, status portofolio akan menjadi "Privat".</span>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowPortfolioModal(false)}
+                  className="px-4 py-2 border border-stone-200 text-stone-600 text-xs font-semibold rounded-lg hover:bg-stone-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  {editingPortfolio ? 'Update Portofolio' : 'Tambah Portofolio'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 5: CARA ORDER STEP CRUD FORM */}
+      {/* ==================================================== */}
+      {showStepModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white border border-stone-200 rounded-lg w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="border-b border-stone-200 p-4 flex justify-between items-center bg-emerald-50 shrink-0">
+              <h2 className="font-heading text-sm text-emerald-900 font-bold">
+                {editingStep ? 'Edit Langkah Pemesanan' : 'Tambah Langkah Pemesanan Baru'}
+              </h2>
+              <button onClick={() => setShowStepModal(false)} className="text-lg text-stone-400 hover:text-stone-700 cursor-pointer">
+                <IoCloseOutline />
+              </button>
+            </div>
+
+            <form onSubmit={handleStepFormSubmit} className="p-5 overflow-y-auto flex-grow flex flex-col gap-4 no-scrollbar font-body">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Nomor Urut</label>
+                  <input
+                    type="text"
+                    value={stepNum}
+                    onChange={e => setStepNum(e.target.value)}
+                    placeholder="Contoh: 01"
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Tipe Ikon</label>
+                  <select
+                    value={stepIconType}
+                    onChange={e => setStepIconType(e.target.value)}
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs font-body"
+                  >
+                    <option value="sparkles">Sparkles (Bintang)</option>
+                    <option value="chatbubble">Chatbubble (Pesan)</option>
+                    <option value="document">Document (Formulir)</option>
+                    <option value="images">Images (Desain/Draf)</option>
+                    <option value="card">Card (Pembayaran)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Judul Langkah</label>
+                <input
+                  type="text"
+                  value={stepTitle}
+                  onChange={e => setStepTitle(e.target.value)}
+                  placeholder="Contoh: Pilih Template Desain"
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-stone-500 mb-1 font-semibold">Deskripsi Panduan</label>
+                <textarea
+                  rows={4}
+                  value={stepDesc}
+                  onChange={e => setStepDesc(e.target.value)}
+                  placeholder="Jelaskan secara mendalam instruksi pada langkah ini agar memudahkan pembeli."
+                  className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs resize-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Tombol Aksi (Opsional)</label>
+                  <input
+                    type="text"
+                    value={stepActionText}
+                    onChange={e => setStepActionText(e.target.value)}
+                    placeholder="Contoh: Chat Admin"
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1 font-semibold">Link Aksi (Opsional)</label>
+                  <input
+                    type="text"
+                    value={stepActionLink}
+                    onChange={e => setStepActionLink(e.target.value)}
+                    placeholder="Contoh: /produk atau link WA"
+                    className="w-full px-3 py-2 border border-stone-200 focus:border-emerald-500 outline-none rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowStepModal(false)}
+                  className="px-4 py-2 border border-stone-200 text-stone-600 text-xs font-semibold rounded-lg hover:bg-stone-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  {editingStep ? 'Update Langkah' : 'Tambah Langkah'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div
         className={`fixed left-1/2 -translate-x-1/2 z-[100] bg-stone-900 text-white rounded-lg py-2.5 px-6 flex items-center justify-center gap-2 max-w-xs transition-all duration-300 ${
           showToast ? 'bottom-10 opacity-100' : 'bottom-0 opacity-0 pointer-events-none'

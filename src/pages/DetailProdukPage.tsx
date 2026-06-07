@@ -6,7 +6,7 @@ import {
 } from 'react-icons/io5'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { getLocalProducts, type ProductData } from '../utils/dummyData'
+import { getLocalProducts, type ProductData, getLocalAppSettings } from '../utils/dummyData'
 
 function formatPrice(price: number) {
   return 'Rp ' + price.toLocaleString('id-ID')
@@ -17,6 +17,7 @@ export default function DetailProdukPage() {
   const navigate = useNavigate()
   const [product, setProduct] = useState<ProductData | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<ProductData[]>([])
+  const settings = getLocalAppSettings()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -40,23 +41,19 @@ export default function DetailProdukPage() {
 
   if (!product) {
     return (
-      <div className="bg-white text-stone-800 font-body min-h-screen flex flex-col">
-        <div className="hidden md:block">
-          <Navbar />
-        </div>
+      <div className="bg-[#FAF9F6] text-stone-850 font-body min-h-screen flex flex-col justify-between">
+        <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center py-20 px-4">
           <IoSearchOutline className="text-5xl text-stone-300 mb-4" />
-          <h1 className="font-heading text-2xl font-bold text-stone-800 mb-2">Produk Tidak Ditemukan</h1>
+          <h1 className="text-2xl font-bold text-stone-850 mb-2">Produk Tidak Ditemukan</h1>
           <p className="text-stone-500 mb-6 text-center max-w-sm">
             Maaf, detail produk yang Anda cari tidak tersedia.
           </p>
-          <Link to="/produk" className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
+          <Link to="/produk" className="px-5 py-2.5 bg-[#0F3A26] hover:bg-emerald-800 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
             <IoChevronBackOutline /> Kembali ke Galeri
           </Link>
         </div>
-        <div className="hidden md:block">
-          <Footer />
-        </div>
+        <Footer />
       </div>
     )
   }
@@ -67,20 +64,35 @@ export default function DetailProdukPage() {
     encodeURIComponent(`Halo Bimora Digital! Saya tertarik untuk memesan template undangan digital *${name}*. Boleh konsultasi lebih lanjut?`)
 
   return (
-    <div className="bg-slate-50 text-stone-800 font-body min-h-screen">
-      {/* Navbar - Desktop Only */}
-      <div className="hidden md:block">
-        <Navbar />
-      </div>
+    <div className="bg-[#FAF9F6] text-stone-850 font-body min-h-screen selection:bg-emerald-100 selection:text-[#0F3A26]">
+      <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 pt-6 pb-20">
+      <main className="max-w-7xl mx-auto px-4 pt-10 pb-20">
         
-        {/* Responsive Grid layout: 2 columns on desktop (7 cols left, 5 cols right), 1 column on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Navigation / Back Button Row */}
+        <div className="flex items-center justify-between mb-8 pb-5 border-b border-stone-255">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-lg bg-white border border-stone-200 text-[#0F3A26] flex items-center justify-center text-lg hover:bg-emerald-50 transition-all cursor-pointer"
+          >
+            <IoChevronBackOutline />
+          </button>
+          <div className="text-right">
+            <span className="text-[9px] tracking-widest uppercase text-emerald-700 font-bold block">
+              Detail Desain
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#0F3A26] tracking-tight">
+              {product.name}
+            </h1>
+          </div>
+        </div>
+
+        {/* Product Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           
-          {/* Left Column: Cover Image & Description */}
-          <div className="md:col-span-7 space-y-4">
-            <div className="relative aspect-[16/10] w-full bg-slate-900 rounded-2xl overflow-hidden">
+          {/* Left Column: Image Preview & Description */}
+          <div className="md:col-span-7 space-y-6">
+            <div className="relative aspect-[16/10] w-full bg-[#0F3A26] rounded-lg overflow-hidden border border-stone-200">
               {product.thumbnail ? (
                 <img
                   src={product.thumbnail}
@@ -88,80 +100,56 @@ export default function DetailProdukPage() {
                   alt={product.name}
                 />
               ) : (
-                <div className="w-full h-full bg-slate-950 flex items-center justify-center">
-                  <span className="text-white text-xs font-semibold">Bimora Premium Template</span>
+                <div className="w-full h-full flex items-center justify-center p-6 text-center">
+                  <span className="text-white text-lg font-bold">{product.name}</span>
                 </div>
               )}
-              
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-              {/* Floating Back Button */}
-              <button
-                onClick={() => navigate(-1)}
-                className="absolute top-4 left-4 z-20 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-stone-800 flex items-center justify-center text-lg hover:bg-white active:scale-95 transition-all cursor-pointer"
-              >
-                <IoChevronBackOutline />
-              </button>
-
-              {/* Title overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 pt-12">
-                <h1 className="font-heading text-base sm:text-lg font-extrabold text-white leading-tight">
-                  {product.name}
-                </h1>
-              </div>
             </div>
 
-            {/* Keterangan Card */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-5">
-              <span className="inline-block px-2.5 py-0.5 bg-emerald-600 text-white text-[9px] font-extrabold rounded uppercase tracking-wider mb-3">
-                Keterangan
+            {/* Keterangan / Deskripsi */}
+            <div className="bg-white border border-stone-200 rounded-lg p-6 sm:p-8">
+              <span className="inline-block px-2.5 py-1 bg-emerald-50 text-[#0F3A26] text-[9px] font-bold rounded uppercase tracking-wider mb-4 border border-emerald-100">
+                Deskripsi Desain
               </span>
-              <p className="text-stone-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
+              <p className="text-stone-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-light">
                 {product.desc}
               </p>
             </div>
           </div>
 
-          {/* Right Column: Pricing, CTAs, Features, Reviews */}
-          <div className="md:col-span-5 space-y-4">
+          {/* Right Column: Pricing, Buy Button, Features, Recommendations */}
+          <div className="md:col-span-5 space-y-6">
             
-            {/* Pricing & Key Metrics Card */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-5">
-              <div className="flex justify-between items-baseline mb-1">
-                <span className="text-2xl font-bold text-emerald-600 tracking-tight">
+            {/* Pricing Card */}
+            <div className="bg-white border border-stone-200 rounded-lg p-6">
+              <div className="flex justify-between items-baseline mb-2">
+                <span className="text-2xl font-bold text-[#0F3A26] tracking-tight">
                   {formatPrice(product.price)}
                 </span>
-                <span className="text-[10px] bg-red-50 text-red-500 font-extrabold px-2.5 py-0.5 rounded">
-                  DISKON {discountPercent}%
+                <span className="text-[9px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded">
+                  HEMAT {discountPercent}%
                 </span>
               </div>
               
-              <p className="text-xs text-stone-500 font-medium mb-3">
+              <p className="text-xs text-stone-500 mb-4">
                 Harga normal dari <span className="line-through">{formatPrice(product.originalPrice)}</span>
               </p>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden mb-3">
-                <div className="bg-emerald-500 h-full rounded-full w-full" />
-              </div>
-
-              {/* Sub metrics */}
-              <div className="flex justify-between items-center text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">
+              <div className="border-t border-stone-100 pt-4 flex justify-between items-center text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">
                 <span>Kategori: {product.category}</span>
-                <span className="text-emerald-600">Status: Tersedia</span>
+                <span className="text-emerald-700">Status: Siap Pengerjaan</span>
               </div>
             </div>
 
-            {/* Call to Actions (CTA) */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-3">
+            {/* CTAs */}
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-3">
               <a
-                href={`https://wa.me/6281234567890?text=${waMessage(product.name)}`}
+                href={`https://wa.me/${settings.waNumber}?text=${waMessage(product.name)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 bg-[#0F3A26] hover:bg-emerald-800 text-white font-bold text-sm rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm text-center"
               >
-                <IoLogoWhatsapp className="text-base" /> Pesan Sekarang via WhatsApp
+                <IoLogoWhatsapp className="text-base text-green-400" /> Pesan & Isi Data via WhatsApp
               </a>
 
               {product.previewSlug && (
@@ -170,79 +158,79 @@ export default function DetailProdukPage() {
                     href={product.previewSlug}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2.5 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 bg-white border border-[#0F3A26] text-[#0F3A26] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
                   >
-                    <IoEyeOutline className="text-base" /> Lihat Preview Live Web Demo
+                    <IoEyeOutline className="text-base" /> Lihat Demo Undangan
                   </a>
                 ) : (
                   <Link
                     to={`/undangan/${product.previewSlug}`}
-                    className="w-full py-2.5 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 bg-white border border-[#0F3A26] text-[#0F3A26] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
                   >
-                    <IoEyeOutline className="text-base" /> Lihat Preview Live Web Demo
+                    <IoEyeOutline className="text-base" /> Lihat Demo Undangan
                   </Link>
                 )
               )}
             </div>
 
-            {/* Fitur Undangan Card */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-5">
-              <span className="inline-block px-2.5 py-0.5 bg-emerald-600 text-white text-[9px] font-extrabold rounded uppercase tracking-wider mb-3">
-                Fitur Undangan
+            {/* Features Card */}
+            <div className="bg-white border border-stone-200 rounded-lg p-6">
+              <span className="inline-block px-2.5 py-1 bg-emerald-50 text-[#0F3A26] text-[9px] font-bold rounded uppercase tracking-wider mb-4 border border-emerald-100">
+                Fitur yang Didapatkan
               </span>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {product.features.map((feature, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <IoCheckmarkCircle className="text-emerald-600 text-sm shrink-0 mt-0.5" />
-                    <span className="text-xs text-stone-700 leading-tight font-semibold">{feature}</span>
+                    <IoCheckmarkCircle className="text-emerald-700 text-sm shrink-0 mt-0.5" />
+                    <span className="text-xs text-stone-700 leading-tight font-light">{feature}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Rating & Ulasan Card */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-5">
-              <h3 className="font-heading text-xs font-bold text-stone-800 uppercase tracking-wider mb-2.5">
+            {/* Reviews Card */}
+            <div className="bg-white border border-stone-200 rounded-lg p-6">
+              <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider mb-3">
                 Ulasan Pembeli ({product.reviews})
               </h3>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <div className="flex">
                   {[...Array(5)].map((_, j) => (
                     j < product.rating
-                      ? <IoStar key={j} className="text-amber-400 text-xs" />
+                      ? <IoStar key={j} className="text-amber-500 text-xs" />
                       : <IoStarOutline key={j} className="text-stone-200 text-xs" />
                   ))}
                 </div>
-                <span className="text-xs font-bold text-stone-700">{product.rating.toFixed(1)} dari 5.0</span>
+                <span className="text-xs font-bold text-stone-750">{product.rating.toFixed(1)} / 5.0</span>
               </div>
             </div>
 
-            {/* Related Products Section */}
+            {/* Recommendations */}
             {relatedProducts.length > 0 && (
-              <div className="bg-white border border-stone-200 rounded-2xl p-5">
-                <h3 className="font-heading text-xs font-bold text-stone-800 uppercase tracking-wider mb-3">
-                  Rekomendasi Template Lain
+              <div className="bg-white border border-stone-200 rounded-lg p-6">
+                <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider mb-4">
+                  Rekomendasi Tema Lain
                 </h3>
                 <div className="space-y-3">
                   {relatedProducts.map(prod => (
                     <Link
                       key={prod.id}
                       to={`/produk/${prod.id}`}
-                      className="bg-white border border-stone-100 rounded-xl p-3 flex gap-3 hover:border-emerald-500/30 transition-all block"
+                      className="bg-white border border-stone-150 rounded-lg p-3 flex gap-3 hover:border-emerald-700 transition-all block"
                     >
-                      <div className="w-20 aspect-[16/10] bg-slate-900 rounded overflow-hidden shrink-0">
+                      <div className="w-20 aspect-[16/10] bg-[#0F3A26] rounded overflow-hidden shrink-0 flex items-center justify-center">
                         {prod.thumbnail ? (
                           <img src={prod.thumbnail} alt={prod.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full bg-slate-950" />
+                          <span className="text-[8px] text-white font-bold text-center p-1">{prod.name.split('–')[0]}</span>
                         )}
                       </div>
                       <div className="flex flex-col justify-between">
                         <div>
-                          <span className="text-[8px] text-emerald-600 font-bold uppercase tracking-wider">{prod.category}</span>
-                          <h4 className="font-heading text-xs font-bold text-stone-800 line-clamp-1 mt-0.5">{prod.name}</h4>
+                          <span className="text-[8px] text-emerald-700 font-bold uppercase tracking-wider">{prod.category}</span>
+                          <h4 className="text-xs font-bold text-[#0F3A26] line-clamp-1 mt-0.5">{prod.name}</h4>
                         </div>
-                        <span className="text-xs font-bold text-emerald-600">{formatPrice(prod.price)}</span>
+                        <span className="text-xs font-bold text-[#0F3A26]">{formatPrice(prod.price)}</span>
                       </div>
                     </Link>
                   ))}
@@ -256,10 +244,7 @@ export default function DetailProdukPage() {
 
       </main>
 
-      {/* Footer - Desktop Only */}
-      <div className="hidden md:block">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   )
 }

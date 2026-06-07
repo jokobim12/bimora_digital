@@ -5,6 +5,8 @@ import DetailProdukPage from './pages/DetailProdukPage'
 import TentangPage from './pages/TentangPage'
 import AdminDashboard from './pages/AdminDashboard'
 import InvitationViewer from './pages/InvitationViewer'
+import PortofolioPage from './pages/PortofolioPage'
+import CaraOrderPage from './pages/CaraOrderPage'
 
 export default function App() {
   return (
@@ -13,6 +15,8 @@ export default function App() {
         <Route path="/" element={<BerandaPage />} />
         <Route path="/produk" element={<ProdukPage />} />
         <Route path="/produk/:id" element={<DetailProdukPage />} />
+        <Route path="/portofolio" element={<PortofolioPage />} />
+        <Route path="/cara-order" element={<CaraOrderPage />} />
         <Route path="/tentang" element={<TentangPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/undangan/:slug" element={<InvitationViewer />} />

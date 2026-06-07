@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IoArrowForwardOutline,
@@ -6,231 +7,261 @@ import {
   IoPhonePortraitOutline,
   IoTimeOutline,
   IoHeartOutline,
-  IoStar,
+  IoCheckmarkCircle,
+  IoEyeOutline
 } from 'react-icons/io5'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { getLocalProducts, getLocalAppSettings } from '../utils/dummyData'
 
 const features = [
   {
     icon: <IoPhonePortraitOutline />,
-    title: 'Tampilan Elegan di Semua Perangkat',
-    desc: 'Undangan digital dirancang responsif sempurna di smartphone, tablet, maupun laptop — tanpa distorsi desain.',
+    title: 'Tampilan Android & iOS Responsif',
+    desc: 'Undangan digital dirancang responsif sempurna di layar smartphone Anda, dengan loading super cepat.',
   },
   {
     icon: <IoSparkles />,
-    title: 'Animasi & Ornamen Premium',
-    desc: 'Ornamen budaya Nusantara (Gunungan, Batik, Ukiran) dihadirkan dengan animasi halus yang memukau tamu undangan.',
+    title: 'Animasi & Ornamen Tradisional',
+    desc: 'Sentuhan ornamen Nusantara (Jawa, Sunda, Modern) dihadirkan dengan detail ornamen yang anggun dan berkelas.',
   },
   {
     icon: <IoTimeOutline />,
-    title: 'Proses Cepat & Mudah',
-    desc: 'Kirim data, kami kerjakan dalam 1x24 jam. Revisi bebas sampai pas — tanpa perlu keahlian teknis apapun.',
+    title: 'Pengerjaan Cepat 1x24 Jam',
+    desc: 'Kirim berkas data pernikahan Anda, dan draf undangan Anda siap dalam waktu 24 jam saja.',
   },
   {
     icon: <IoHeartOutline />,
-    title: 'Fitur Love Story & Galeri',
-    desc: 'Kisahkan perjalanan cinta Anda lewat timeline cerita dan galeri foto prewedding yang dapat dikustomisasi penuh.',
-  },
-]
-
-const testimonials = [
-  {
-    name: 'Dewi & Arif',
-    date: 'Mei 2026',
-    rating: 5,
-    text: 'Undangannya luar biasa cantik! Banyak tamu yang tanya beli di mana. Prosesnya juga cepat dan responsif banget.',
-    template: 'Adat Jawa Premium',
-  },
-  {
-    name: 'Sinta & Bagas',
-    date: 'April 2026',
-    rating: 5,
-    text: 'Sempurna! Desainnya rapi dan mewah. Fitur countdown-nya bikin tamu makin excited. Highly recommended!',
-    template: 'Modern Emerald Gold',
-  },
-  {
-    name: 'Rini & Hendra',
-    date: 'Maret 2026',
-    rating: 5,
-    text: 'Harga terjangkau tapi kualitasnya premium. Admin ramah dan revisi cepat. Pokoknya puas banget!',
-    template: 'Adat Jawa Premium',
+    title: 'Fitur Interaktif & Modern',
+    desc: 'Dilengkapi dengan buku tamu, RSVP online, peta lokasi presisi, kisah cinta, musik latar, dan kado digital.',
   },
 ]
 
 const steps = [
-  { num: '01', title: 'Pilih Template', desc: 'Jelajahi koleksi template kami dan pilih yang paling cocok dengan konsep pernikahan Anda.' },
-  { num: '02', title: 'Kirim Data', desc: 'Isi form data mempelai, waktu, lokasi, foto, dan detail lainnya melalui WhatsApp atau formulir.' },
-  { num: '03', title: 'Review & Revisi', desc: 'Tim kami menyiapkan undangan dalam 24 jam. Revisi gratis sampai sesuai keinginan.' },
-  { num: '04', title: 'Undangan Siap Sebar!', desc: 'Dapatkan link unik undangan Anda dan bagikan ke seluruh tamu secara mudah dan elegan.' },
+  { num: '1', title: 'Pilih Desain', desc: 'Pilih template favorit Anda dari daftar katalog di bawah ini.' },
+  { num: '2', title: 'Isi Data via WA', desc: 'Konsultasi dan kirim data pernikahan ke admin via WhatsApp.' },
+  { num: '3', title: 'Tinjau & Revisi', desc: 'Draf dikerjakan 1x24 jam. Anda dapat meminta revisi sepuasnya secara gratis.' },
+  { num: '4', title: 'Siap Disebar!', desc: 'Link undangan aktif setelah pembayaran, siap dibagikan ke kerabat.' },
 ]
 
 export default function BerandaPage() {
+  const [products] = useState(() => getLocalProducts().slice(0, 4)) // Show top 4 templates on homepage
+  const settings = getLocalAppSettings()
+
+  const waMessage = (name: string) =>
+    encodeURIComponent(`Halo Bimora Digital! Saya tertarik untuk memesan template undangan digital *${name}*. Boleh konsultasi lebih lanjut?`)
+
   return (
-    <div className="bg-white text-stone-800 font-body min-h-screen">
+    <div className="bg-[#FAF9F6] text-stone-850 font-body min-h-screen selection:bg-emerald-100 selection:text-[#0F3A26]">
       <Navbar />
 
-      {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 bg-slate-50 border-b border-slate-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center">
-          {/* Text */}
+      {/* ===== HERO SECTION ===== */}
+      <section className="bg-white border-b border-stone-200 pt-8 pb-12 sm:pt-16 sm:pb-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div className="flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-semibold tracking-[2px] uppercase px-4 py-1.5 rounded-lg mb-5">
-              <IoSparkles /> Platform Undangan Digital Premium
+            {/* Tagline */}
+            <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-[#0F3A26] text-[10px] font-bold tracking-[2px] uppercase px-3 py-1 rounded-md mb-6">
+              <IoSparkles /> Bimora Digital
             </div>
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-800 leading-tight mb-5">
-              Undangan Pernikahan{' '}
-              <span className="text-emerald-600">
-                Digital Elegan
-              </span>
-              {' '}& Berkesan
+            
+            {/* Title & Desc */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0F3A26] tracking-tight leading-tight mb-4 max-w-2xl">
+              Undangan Pernikahan Digital Premium & Cepat
             </h1>
-            <p className="text-stone-500 text-sm sm:text-base leading-relaxed max-w-xl mx-auto mb-8">
-              Bimora menghadirkan keindahan tradisi Nusantara dalam genggaman tamu Anda. Undangan digital premium dengan animasi megah, fitur lengkap, dan harga terjangkau.
+            <p className="text-stone-600 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl mx-auto mb-8 font-medium">
+              Desain modern berkelas Nusantara, dioptimalkan sepenuhnya untuk tampilan mobile Android & iOS. Pembuatan mudah, revisi gratis sepuasnya, selesai dalam 24 jam.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/produk"
-                className="px-7 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                Lihat Produk <IoArrowForwardOutline />
-              </Link>
+
+            {/* Quick CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <a
-                href="https://wa.me/6281234567890?text=Halo%20Bimora%20Digital,%20saya%20ingin%20konsultasi%20undangan"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-7 py-3.5 bg-white hover:bg-slate-50 border-2 border-emerald-100 hover:border-emerald-400 text-emerald-700 font-bold text-sm rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                href="#katalog-produk"
+                className="px-6 py-3 bg-[#0F3A26] hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
-                <IoLogoWhatsapp className="text-green-500" /> Konsultasi Gratis
+                Lihat Pilihan Desain <IoArrowForwardOutline />
               </a>
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-wrap gap-8 justify-center mt-12">
-              {[
-                { num: '200+', label: 'Klien Puas' },
-                { num: '15+', label: 'Template Tersedia' },
-                { num: '1x24 Jam', label: 'Proses Pengerjaan' },
-              ].map(stat => (
-                <div key={stat.label} className="text-center px-4">
-                  <p className="font-heading text-2xl font-bold text-emerald-600">{stat.num}</p>
-                  <p className="text-[11px] text-stone-400 uppercase tracking-wider">{stat.label}</p>
-                </div>
-              ))}
+              <Link
+                to="/cara-order"
+                className="px-6 py-3 bg-white hover:bg-emerald-50 border border-stone-300 text-stone-700 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                Cara Pemesanan
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== FEATURES ===== */}
-      <section className="py-16 sm:py-20 bg-white">
+      {/* ===== DIRECT PRODUCTS LISTING (KATALOG UTAMA) ===== */}
+      <section id="katalog-produk" className="py-16 bg-[#FAF9F6] border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <p className="text-[10px] tracking-[4px] uppercase text-emerald-600 font-semibold mb-2">Keunggulan Kami</p>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-stone-800">Mengapa Pilih Bimora?</h2>
-            <div className="w-16 h-0.5 bg-emerald-600 mx-auto mt-4" />
+          <div className="text-center mb-10">
+            <span className="inline-block px-3 py-1 bg-emerald-50 text-[#0F3A26] text-[9px] tracking-[3px] uppercase font-bold rounded-full mb-3">
+              KATALOG TERPOPULER
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F3A26]">
+              Pilih Desain Undangan Anda
+            </h2>
+            <p className="text-stone-500 text-xs sm:text-sm mt-2 font-medium max-w-md mx-auto">
+              Temukan desain terbaik untuk hari bahagia Anda. Klik produk untuk melihat info detail dan live demo.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f, i) => (
-              <div key={i} className="group bg-white border border-stone-100 hover:border-emerald-200 p-6 rounded-lg transition-all">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-2xl mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                  {f.icon}
-                </div>
-                <h3 className="font-semibold text-stone-800 mb-2 text-sm">{f.title}</h3>
-                <p className="text-stone-400 text-xs leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== HOW IT WORKS ===== */}
-      <section className="py-16 sm:py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <p className="text-[10px] tracking-[4px] uppercase text-emerald-600 font-semibold mb-2">Alur Pemesanan</p>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-stone-800">Cara Pesan Mudah</h2>
-            <div className="w-16 h-0.5 bg-emerald-600 mx-auto mt-4" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((s, i) => (
-              <div key={i} className="relative">
-                <div className="bg-white border border-stone-100 rounded-lg p-6 hover:border-emerald-200 transition-all h-full">
-                  <div className="w-12 h-12 bg-emerald-600 text-white font-heading font-bold text-xl rounded-lg flex items-center justify-center mb-4">
-                    {s.num}
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {products.map(product => {
+              const discountPercent = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+              return (
+                <div
+                  key={product.id}
+                  className="bg-white border border-stone-200 rounded-lg overflow-hidden flex flex-col hover:border-[#0F3A26] transition-all shadow-sm group"
+                >
+                  {/* Thumbnail Image */}
+                  <div className="relative aspect-[16/10] w-full bg-stone-900 overflow-hidden border-b border-stone-100">
+                    {product.thumbnail ? (
+                      <img
+                        src={product.thumbnail}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#0F3A26] flex items-center justify-center p-4">
+                        <span className="text-white text-xs font-bold text-center">{product.name}</span>
+                      </div>
+                    )}
+                    {/* Category Pill Tag */}
+                    <span className="absolute top-3 left-3 px-2 py-0.5 bg-white text-[#0F3A26] border border-stone-200 text-[9px] font-bold rounded uppercase tracking-wider">
+                      {product.category}
+                    </span>
+                    {/* Diskon tag */}
+                    <span className="absolute top-3 right-3 px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded">
+                      -{discountPercent}%
+                    </span>
                   </div>
-                  <h3 className="font-semibold text-stone-800 mb-2 text-sm">{s.title}</h3>
-                  <p className="text-stone-400 text-xs leading-relaxed">{s.desc}</p>
-                </div>
-                {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-0.5 bg-emerald-250" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ===== TESTIMONIALS ===== */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <p className="text-[10px] tracking-[4px] uppercase text-emerald-600 font-semibold mb-2">Ulasan Klien</p>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-stone-800">Cerita Bahagia Mereka</h2>
-            <div className="w-16 h-0.5 bg-emerald-600 mx-auto mt-4" />
-          </div>
+                  {/* Card details */}
+                  <div className="p-4 flex flex-col flex-grow">
+                    {/* Title */}
+                    <h3 className="text-sm sm:text-base font-bold text-stone-900 leading-snug mb-2 min-h-[40px]">
+                      {product.name}
+                    </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <div key={i} className="bg-white border border-stone-100 rounded-lg p-6 hover:border-emerald-200 transition-all">
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(t.rating)].map((_, j) => (
-                    <IoStar key={j} className="text-emerald-600 text-sm" />
-                  ))}
-                </div>
-                <p className="text-stone-600 text-sm leading-relaxed mb-4 italic">"{t.text}"</p>
-                <div className="border-t border-stone-100 pt-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-stone-800 text-sm">{t.name}</p>
-                    <p className="text-[10px] text-emerald-600">{t.template}</p>
+                    {/* Features checklist snippet */}
+                    <div className="space-y-1 mb-4 flex-grow">
+                      {product.features.slice(0, 3).map((feat, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 text-[10px] text-stone-550">
+                          <IoCheckmarkCircle className="text-emerald-700 text-xs shrink-0" />
+                          <span className="truncate">{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pricing row */}
+                    <div className="border-t border-stone-100 pt-3 flex justify-between items-end mb-3.5">
+                      <div>
+                        <span className="text-[8px] text-stone-400 uppercase tracking-wider block font-bold">Harga Promo</span>
+                        <span className="font-bold text-[#0F3A26] text-xs sm:text-sm">Rp {product.price.toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-stone-400 line-through">Rp {product.originalPrice.toLocaleString('id-ID')}</span>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        to={`/produk/${product.id}`}
+                        className="py-2 border border-stone-200 text-[#0F3A26] hover:bg-emerald-50 text-[10px] font-bold rounded-md transition-all text-center flex items-center justify-center gap-1"
+                      >
+                        <IoEyeOutline /> Detail Info
+                      </Link>
+                      <a
+                        href={`https://wa.me/${settings.waNumber}?text=${waMessage(product.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2 bg-[#0F3A26] hover:bg-emerald-800 text-white text-[10px] font-bold rounded-md transition-all text-center flex items-center justify-center gap-1"
+                      >
+                        <IoLogoWhatsapp /> Pesan
+                      </a>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-stone-400">{t.date}</p>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </div>
-      </section>
 
-      {/* ===== CTA BANNER ===== */}
-      <section className="py-16 sm:py-20 bg-emerald-950">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <div className="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-5">
-            <IoHeartOutline className="text-white text-3xl" />
-          </div>
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mb-4">
-            Siap Buat Undangan Impian Anda?
-          </h2>
-          <p className="text-white/80 text-sm sm:text-base leading-relaxed mb-8">
-            Konsultasikan kebutuhan undangan digital Anda bersama tim kami sekarang. Gratis konsultasi, tanpa biaya tersembunyi.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="https://wa.me/6281234567890?text=Halo%20Bimora%20Digital,%20saya%20ingin%20pesan%20undangan%20digital"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-4 bg-white hover:bg-slate-50 text-emerald-950 font-bold text-sm rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <IoLogoWhatsapp className="text-green-500 text-lg" /> Chat WhatsApp Sekarang
-            </a>
+          <div className="text-center mt-10">
             <Link
               to="/produk"
-              className="px-8 py-4 bg-white/10 hover:bg-white/20 border-2 border-white/40 hover:border-white text-white font-bold text-sm rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-6 py-3 bg-white border border-stone-300 text-stone-700 hover:text-[#0F3A26] hover:border-[#0F3A26] text-xs font-bold rounded-lg transition-all"
             >
-              Lihat Semua Produk <IoArrowForwardOutline />
+              Lihat Semua Desain Undangan ({products.length + 2}+)
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== STEPS SECTION ===== */}
+      <section className="py-16 bg-white border-b border-stone-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <span className="inline-block px-3 py-1 bg-emerald-50 text-[#0F3A26] text-[9px] tracking-[3px] uppercase font-bold rounded-full mb-3">
+              CARA PEMESANAN
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F3A26]">
+              4 Langkah Mudah Membuat Undangan
+            </h2>
+            <p className="text-stone-500 text-xs sm:text-sm mt-2 max-w-md mx-auto">
+              Tidak perlu ribet coding atau desain manual. Serahkan semua pengisian data dan pengerjaan kepada tim kami.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {steps.map((s, i) => (
+              <div key={i} className="bg-[#FAF9F6] border border-stone-200 rounded-lg p-5 flex flex-col justify-between hover:border-[#0F3A26] transition-all">
+                <div>
+                  <div className="w-8 h-8 bg-[#0F3A26] text-white font-bold text-xs rounded-md flex items-center justify-center mb-4">
+                    {s.num}
+                  </div>
+                  <h3 className="font-bold text-stone-900 mb-1.5 text-xs sm:text-sm">{s.title}</h3>
+                  <p className="text-stone-500 text-[11px] sm:text-xs leading-relaxed font-light">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link
+              to="/cara-order"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F3A26] hover:text-emerald-800"
+            >
+              Baca panduan order lengkap dan berkas yang perlu disiapkan &rarr;
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FEATURES / VALUE PROPOSITION ===== */}
+      <section className="py-16 bg-[#FAF9F6] border-b border-stone-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <span className="inline-block px-3 py-1 bg-emerald-50 text-[#0F3A26] text-[9px] tracking-[3px] uppercase font-bold rounded-full mb-3">
+              FITUR LENGKAP
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F3A26]">
+              Fitur Premium Bimora Digital
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {features.map((f, i) => (
+              <div key={i} className="bg-white border border-stone-200 p-6 rounded-lg hover:border-[#0F3A26] transition-all">
+                <div className="w-10 h-10 bg-emerald-50 text-[#0F3A26] rounded-md flex items-center justify-center text-xl mb-4">
+                  {f.icon}
+                </div>
+                <h3 className="font-bold text-stone-900 mb-2 text-xs sm:text-sm">{f.title}</h3>
+                <p className="text-stone-500 text-[11px] sm:text-xs leading-relaxed font-light">{f.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

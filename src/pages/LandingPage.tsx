@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
 import { IoArrowForwardOutline, IoCheckmarkCircleOutline, IoLogoWhatsapp, IoSparklesOutline, IoColorPaletteOutline, IoLockOpenOutline } from 'react-icons/io5'
+import { getLocalAppSettings } from '../utils/dummyData'
 
 export default function LandingPage() {
+  const settings = getLocalAppSettings()
+
   const templates = [
     {
       id: 'jawa-premium',
@@ -14,7 +17,7 @@ export default function LandingPage() {
     {
       id: 'modern-emerald',
       name: 'Modern Emerald Gold (Coming Soon)',
-      desc: 'Aura minimalis modern dipadukan dengan aksen warna hijau emerald mewah dan font sans-serif serif kontemporer.',
+      desc: 'Aura minimalis modern dipadukan dengan aksen warna hijau emerald mewah and font sans-serif serif kontemporer.',
       img: '',
       slug: 'demo-emerald',
       price: 'Rp 129.000',
@@ -269,7 +272,7 @@ export default function LandingPage() {
 
                 <div className="mt-10">
                   <a 
-                    href="https://wa.me/6281234567890?text=Halo%20Bimora%20Digital,%20saya%20tertarik%20pesan%20Undangan%20Pernikahan"
+                    href={`https://wa.me/${settings.waNumber}?text=${encodeURIComponent('Halo Bimora Digital, saya tertarik pesan Undangan Pernikahan')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`w-full py-3.5 rounded-xl font-body text-[10px] tracking-widest uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
@@ -296,7 +299,7 @@ export default function LandingPage() {
           </div>
 
           <p className="font-body text-[10px] text-jawa-cream/40">
-            © {new Date().getFullYear()} Bimora Digital. All Rights Reserved. Made by <a href="https://instagram.com/jokobim12" target="_blank" rel="noopener noreferrer" className="text-jawa-gold hover:underline">@jokobim12</a>
+            © {new Date().getFullYear()} Bimora Digital. All Rights Reserved. Made by <a href={`https://instagram.com/${settings.instagram}`} target="_blank" rel="noopener noreferrer" className="text-jawa-gold hover:underline">@{settings.instagram}</a>
           </p>
         </div>
       </footer>

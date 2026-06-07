@@ -18,9 +18,10 @@ export default {
         }
       },
       fontFamily: {
-        heading: ['Cormorant Garamond', 'serif'],
-        script: ['Great Vibes', 'cursive'],
-        body: ['Poppins', 'sans-serif'],
+        heading: ['Inter', 'sans-serif'],
+        serif: ['Inter', 'sans-serif'],
+        script: ['Inter', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
       },
       boxShadow: {
         'gold-glow': '0 0 20px rgba(212, 168, 71, 0.3)',
