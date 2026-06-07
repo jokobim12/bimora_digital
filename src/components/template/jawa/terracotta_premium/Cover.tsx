@@ -20,7 +20,7 @@ export default function Cover({ guestName, onOpen, closing, data }: CoverProps) 
         
         {/* Layer 1: Background Archway (Anchored to bottom, scaled up) */}
         <div className={`absolute inset-0 z-0 flex items-end justify-center transition-all duration-[2000ms] ease-out ${
-          closing ? 'transform scale-[1.2] opacity-0 blur-sm' : 'transform scale-100'
+          closing ? 'transform scale-[1.75] opacity-0 blur-[2px] origin-bottom' : 'transform scale-100 origin-bottom'
         }`}>
           <img 
             src="/assets/terracotta/arch.png" 
@@ -56,14 +56,14 @@ export default function Cover({ guestName, onOpen, closing, data }: CoverProps) 
         <img 
           src="/assets/terracotta/pillar.png" 
           alt="Pillar Left" 
-          className={`absolute left-[3%] bottom-[12%] w-[22%] max-w-[90px] z-10 transition-all duration-[2000ms] ease-out ${
+          className={`absolute left-[3%] bottom-[12%] w-[22%] max-w-[90px] z-10 pointer-events-none transition-all duration-[2000ms] ease-out ${
             closing ? 'transform -translate-x-[150%] opacity-0 scale-90' : 'transform translate-x-0'
           }`} 
         />
         <img 
           src="/assets/terracotta/pillar.png" 
           alt="Pillar Right" 
-          className={`absolute right-[3%] bottom-[12%] w-[22%] max-w-[90px] z-10 scale-x-[-1] transition-all duration-[2000ms] ease-out ${
+          className={`absolute right-[3%] bottom-[12%] w-[22%] max-w-[90px] z-10 scale-x-[-1] pointer-events-none transition-all duration-[2000ms] ease-out ${
             closing ? 'transform translate-x-[150%] opacity-0 scale-90' : 'transform translate-x-0'
           }`} 
         />
@@ -120,20 +120,20 @@ export default function Cover({ guestName, onOpen, closing, data }: CoverProps) 
         <img 
           src="/assets/terracotta/wayang_left.png" 
           alt="Wayang Left" 
-          className={`absolute left-[-16%] bottom-[12%] w-[58%] max-w-[230px] z-[25] transition-all duration-[2000ms] ease-out ${
+          className={`absolute left-[-16%] bottom-[12%] w-[58%] max-w-[230px] z-[25] pointer-events-none transition-all duration-[2000ms] ease-out ${
             closing ? 'transform -translate-x-[180%] rotate-[-25deg] opacity-0 scale-90' : 'transform translate-x-0'
           }`} 
         />
         <img 
           src="/assets/terracotta/wayang_right.png" 
           alt="Wayang Right" 
-          className={`absolute right-[-16%] bottom-[12%] w-[58%] max-w-[230px] z-[25] transition-all duration-[2000ms] ease-out ${
+          className={`absolute right-[-16%] bottom-[12%] w-[58%] max-w-[230px] z-[25] pointer-events-none transition-all duration-[2000ms] ease-out ${
             closing ? 'transform translate-x-[180%] rotate-[25deg] opacity-0 scale-90' : 'transform translate-x-0'
           }`} 
         />
 
         {/* Layer 6: Foreground Bottom Flowers (Left Overlapping Layer, tilted and pushed down) */}
-        <div className={`absolute bottom-0 left-[-15%] w-[72%] z-30 transition-all duration-[2000ms] ease-out ${
+        <div className={`absolute bottom-0 left-[-15%] w-[72%] z-30 pointer-events-none transition-all duration-[2000ms] ease-out ${
           closing ? 'transform -translate-x-[60%] translate-y-[100%] opacity-0' : 'transform translate-x-0'
         }`}>
           <img 
@@ -144,7 +144,7 @@ export default function Cover({ guestName, onOpen, closing, data }: CoverProps) 
         </div>
 
         {/* Layer 6: Foreground Bottom Flowers (Right Overlapping Layer, tilted and pushed down) */}
-        <div className={`absolute bottom-0 right-[-15%] w-[72%] z-30 transition-all duration-[2000ms] ease-out ${
+        <div className={`absolute bottom-0 right-[-15%] w-[72%] z-30 pointer-events-none transition-all duration-[2000ms] ease-out ${
           closing ? 'transform translate-x-[60%] translate-y-[100%] opacity-0' : 'transform translate-x-0'
         }`}>
           <img 

@@ -367,7 +367,7 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
         </div>
       )}
 
-      {isOpen && (
+      {(isOpen || closingCover) && (
         <div className="min-h-[100dvh] h-[100dvh] md:h-auto bg-transparent text-[#5A1E17] flex flex-col items-center justify-center relative overflow-hidden z-10">
           
           {/* Header Controls (Floating buttons) */}
