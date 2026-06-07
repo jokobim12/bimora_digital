@@ -19,8 +19,8 @@ export default {
       },
       fontFamily: {
         heading: ['Inter', 'sans-serif'],
-        serif: ['Inter', 'sans-serif'],
-        script: ['Inter', 'sans-serif'],
+        serif: ['Cormorant Garamond', 'serif'],
+        script: ['Great Vibes', 'cursive'],
         body: ['Inter', 'sans-serif'],
       },
       boxShadow: {
