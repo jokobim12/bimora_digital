@@ -16,6 +16,7 @@ interface InvitationTemplateProps {
 }
 
 export default function InvitationTemplate({ data }: InvitationTemplateProps) {
+  const [isLoading, setIsLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [closingCover, setClosingCover] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -47,6 +48,13 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
       return () => clearTimeout(t)
     }
   }, [showToast])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Detect query parameter and set guest name
   useEffect(() => {
@@ -175,6 +183,30 @@ export default function InvitationTemplate({ data }: InvitationTemplateProps) {
       targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
       setActiveTab(tabId)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-[150] bg-black flex flex-col items-center justify-center text-jawa-cream p-6">
+        <div className="flex flex-col items-center max-w-sm text-center">
+          <img 
+            src="/assets/gunungan.png" 
+            alt="Gunungan" 
+            className="w-16 h-auto mb-6 filter brightness-110 drop-shadow-[0_0_12px_rgba(212,168,71,0.5)] animate-pulse" 
+          />
+          <p className="font-body text-[9px] tracking-[4px] uppercase text-jawa-gold-light/60 mb-2">
+            Serat Ulem
+          </p>
+          <h2 className="font-script text-xl text-jawa-gold tracking-wide">
+            {data.groom_nickname} &amp; {data.bride_nickname}
+          </h2>
+          
+          <div className="w-32 h-[1.5px] bg-stone-900 mt-6 relative overflow-hidden rounded-full">
+            <div className="absolute inset-0 bg-jawa-gold animate-loading-bar" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
